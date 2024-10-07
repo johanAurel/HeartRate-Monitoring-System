@@ -1,0 +1,4 @@
+
+CREATE USER 'admin'@'%' IDENTIFIED BY '0000';
+GRANT ALL PRIVILEGES ON health_wearables.* TO 'admin'@'%';
+FLUSH PRIVILEGES;
