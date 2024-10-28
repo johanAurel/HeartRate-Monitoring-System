@@ -1,0 +1,6 @@
+Django>=4.2                # Django framework for web development
+paho-mqtt>=1.6.1           # MQTT client library for Python
+channels>=4.0.0            # Django Channels for WebSocket support
+channels-redis>=4.0.0      # Redis layer for Channels to support scaling
+djangorestframework>=3.14.0 # Django REST framework for building APIs (if using)
+daphne

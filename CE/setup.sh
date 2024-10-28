@@ -1,28 +1,26 @@
+
 # installing python3 and pip
 
 sudo apt update
 
 sudo apt install python3-pip
 
-pip install Flask mysql-connector-python
-
-pip install RPi.GPIO
-
-pip install mysql.connector
-
-# Install MySQL
-
-sudo apt update
-
 sudo apt install mysql-server
 
+pip install mysqlclient
 
-sudo systemctl start mysql
+pip install Flask mysql-connector-python
 
-mysql -u root -p 
+pip install django
 
+# create a new django project
 
+django-admin startproject heart_rate_monitor
+cd heart_rate_monitor
 
+# create a new django app
+
+python manage.py startapp heart_rate_app
 
 
 

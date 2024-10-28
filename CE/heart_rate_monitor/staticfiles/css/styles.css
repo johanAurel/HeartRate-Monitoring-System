@@ -1,0 +1,58 @@
+/* General body styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Remove underline and purple color from hyperlinks */
+a {
+    text-decoration: none; /* Removes underline */
+    color: inherit; /* Uses the same color as surrounding text */
+}
+
+/* Button styles */
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    align-self: center; /* Center the button */
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Device list styles */
+.device-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Space between cards */
+    justify-content: center; /* Center cards in the container */
+    margin-top: 20px; /* Add some space above the device list */
+}
+
+/* Individual device card styles */
+.device-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 20px;
+    width: 250px; /* Set a consistent width for all cards */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center; /* Center text in card */
+}
+
+/* Header styles */
+h1, h2 {
+    text-align: center; /* Center headers */
+    color: #333; /* Darker color for headers */
+}

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <title>Device List</title>
+</head>
+<body>
+    <div style="text-align: center;">
+        <button type="button"><a href="{% url 'home' %}">Home</a></button>
+    </div>
+
+    <h2 style="text-align: center;">Device List</h2>
+    
+    <div class="device-list">
+        {% for device in devices %}
+        <div class="device-card" id="device-{{ device.id }}">
+            <h5>Device ID: {{ device.id }}</h5>
+            <a href="{% url 'heartbeat' device.id %}">View Heartbeat Rate</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

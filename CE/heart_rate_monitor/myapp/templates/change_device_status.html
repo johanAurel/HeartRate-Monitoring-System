@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <title>Change Device Status</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Function to handle status change submission
+            $('#change-status').click(function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                const deviceId = $(this).data('device-id'); // Get the device ID
+                const newStatus = $('#status-select').val(); // Get the new status from dropdown
+
+                // Send AJAX POST request to update the device status
+                $.ajax({
+                    url: "./change_device_status.html",  // Django URL for changing status
+                    type: "POST",
+                    data: {
+                        device_id: deviceId,
+                        status: newStatus,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token
+                    },
+                    success: function(response) {
+                        // Update the displayed status based on the response
+                        $('#device-status').text('Current Status: ' + response.status);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error changing device status:', error);
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div style="text-align: center;">
+        <button type="button"><a href="{% url 'home' %}">Home</a></button>
+    </div>
+
+    <h2 style="text-align: center;">Change Status for {{ device.name }}</h2>
+
+    <div class="device-card">
+        <h5>Device ID: {{ device.id }}</h5>
+        <p id="device-status">Current Status: {{ device.status }}</p>
+        <label for="status-select">Change Status:</label>
+        <select id="status-select">
+            <option value="ON" {% if device.status == "ON" %}selected{% endif %}>On</option>
+            <option value="OFF" {% if device.status == "OFF" %}selected{% endif %}>Off</option>
+        </select>
+        <button id="change-status" data-device-id="{{ device.id }}">Change</button>
+    </div>
+</body>
+</html>
