@@ -129,7 +129,7 @@ Now that everything is set up, run the Django development server:
 python3 manage.py runserver
 ```
 
-Access the application by navigating to `http://127.0.0.1:8000/` in your web browser. You can register a new user, log in, and monitor heart rate readings.
+Access the application by navigating to `localhost:8000/` in your web browser. You can register a new user, log in, and monitor heart rate readings.
 
 ### Summary
 
