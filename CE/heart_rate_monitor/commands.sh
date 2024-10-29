@@ -16,6 +16,8 @@ python3 manage.py makemigrations
 
 python3 manage.py migrate
 
-python3 migrate.py collectstatic
+python3 manage.py collectstatic
+
+python3 manage.py runserver
 
 # daphne -b 0.0.0.0 -p 8000 -u root heart_rate_monitor.asgi:application
