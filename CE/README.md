@@ -1,37 +1,3 @@
-``` graphql
-heart_rate_monitor/
-│
-├── heart_rate_monitor/
-│   ├── __init__.py
-│   ├── asgi.py
-│   ├── settings.py
-│   ├── urls.py
-│   ├── wsgi.py
-│
-├── myapp/
-│   ├── __init__.py
-│   ├── admin.py
-│   ├── apps.py
-│   ├── consumers.py
-│   ├── management/
-│   │   └── commands/
-│   │       └── mqtt_listener.py
-│   ├── migrations/
-│   ├── models.py
-│   ├── routing.py
-│   ├── views.py
-│   ├── templates/
-│   │   └── device_list.html
-│   └── static/
-│       └── js/
-│           └── websocket.js
-│
-├── manage.py
-├── Dockerfile   # If you're using Docker to run the MQTT broker
-└── requirements.txt
-```
-
-
 
 __heart_rate_monitor/asgi.py__ Ensure that Django Channels is set up to handle WebSocket connections.
 
