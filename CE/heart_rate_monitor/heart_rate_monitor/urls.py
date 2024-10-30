@@ -1,5 +1,5 @@
 from django.urls import path
-from myapp.views import conditional_home,device_list, user_list,user_devices, password_management_disabled, login_view, logout_view, register_view, heartbeat_rate, add_device, change_device_status
+from myapp.views import *
 
 urlpatterns = [
     path('', conditional_home, name='conditional_home'),
@@ -17,5 +17,6 @@ urlpatterns = [
     path('devices/<int:device_id>/heartbeat/', heartbeat_rate, name='heartbeat'),
     path('logout', logout_view, name='logout'),
     path('devices/change-status/', change_device_status, name='change_device_status'), 
-    path('connect-to-mqtt/', connect_to_mqtt, name='connect_to_mqtt'), # Ensure this matches your view
+    path('connect-to-mqtt/', connect_to_mqtt, name='connect_to_mqtt'),
+    path('simulate-heartbeat/', simulate_heartbeat, name='simulate_heartbeat')
 ]   

@@ -18,8 +18,8 @@ class CustomAuthenticationForm(AuthenticationForm):
 class DeviceForm(forms.ModelForm):
     class Meta:
         model = Device
-        fields = ['user', 'device_name', 'machine_state']  # Ensure these fields exist in the Device model
+        fields = ['user', 'device_name', 'status']  # Ensure these fields exist in the Device model
         widgets = {
             'device_name': forms.TextInput(attrs={'placeholder': 'Enter device name'}),  # Update to device_name
-            'machine_state': forms.Textarea(attrs={'placeholder': 'Enter machine state'}),  # Update to machine_state
+            'status': forms.Textarea(attrs={'placeholder': 'Enter machine state'}),  # Update to status
         }

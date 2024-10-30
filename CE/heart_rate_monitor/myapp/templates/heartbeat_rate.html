@@ -6,60 +6,25 @@
     <link rel="stylesheet" href="../static/css/styles.css">
     <title>Heartbeat Rate Monitor</title>
     <script src="../static/js/websocket.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery for AJAX -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Function to handle device status change
-            $('#change-status-button').click(function(e) {
-                e.preventDefault(); // Prevent the default form submission
-                
-                const deviceId = "{{ heartbeat.device.id }}"; // Get the device ID
-                const newStatus = $('#status-select').val(); // Get the new status from dropdown
-                
-                // Send AJAX POST request to update the device status
-                $.ajax({
-                    url: "{% url 'change_device_status' %}",  // Your Django URL for changing device status
-                    type: "POST",
-                    data: {
-                        device_id: deviceId,
-                        status: newStatus,
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token
-                    },
-                    success: function(response) {
-                        // Update the displayed status based on the response
-                        $('#device-status').text('Status: ' + response.status);
-                        if (response.status === "ON") {
-                            $('#device-status').css('color', 'green');
-                            '{{heartbeat.device.machine_state}}' = "ON" // Change text color to green
-                        } else {
-                            $('#device-status').css('color', 'red');
-                            '{{heartbeat.device.machine_state}}' = "OFF" // Change text color to red
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error changing device status:', error);
-                    }
-                });
-            });
-
-            // Function to connect to MQTT broker
+            // Connect to MQTT broker
             $('#connect-button').click(function(e) {
-                e.preventDefault(); // Prevent the default form submission
+                e.preventDefault();
 
-                const deviceId = "{{ heartbeat.device.id }}"; // Get the device ID
-                const mqttBroker = $('#mqtt-broker').val(); // Get the MQTT broker address
+                const deviceId = "{{ device.id }}";
+                const mqttBroker = $('#mqtt-broker').val();
 
-                // Send AJAX POST request to connect to the MQTT broker
                 $.ajax({
-                    url: "{% url 'connect_to_mqtt' %}",  // Your Django URL for connecting to MQTT
+                    url: "{% url 'connect_to_mqtt' %}",
                     type: "POST",
                     data: {
                         device_id: deviceId,
                         mqtt_broker: mqttBroker,
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'  // Include CSRF token
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
                     },
                     success: function(response) {
-                        // Handle success response
                         alert('Connected to MQTT Broker: ' + mqttBroker);
                     },
                     error: function(xhr, status, error) {
@@ -67,6 +32,39 @@
                     }
                 });
             });
+
+            // Simulate heartbeat data
+            $('#simulate-heartbeat').click(function(e) {
+                e.preventDefault();
+
+                const deviceId = "{{ device.id }}";
+
+                $.ajax({
+                    url: "{% url 'simulate_heartbeat' %}",
+                    type: "POST",
+                    data: {
+                        device_id: deviceId,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error simulating heartbeat:', error);
+                    }
+                });
+            });
+
+            function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
+                $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
+                $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
+
+                if (alert) {
+                    $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
+                } else {
+                    $('#heartbeat-data').css('color', 'black');
+                }
+            }
         });
     </script>
 </head>
@@ -74,17 +72,24 @@
     <div style="text-align: center;">
         <button type="button"><a href="{% url 'home' %}">Home</a></button>
     </div>
-
+    
     <h1>Heartbeat Rate Monitor for {{ device.name }}</h1>
-    
-    <p id="device-status">Status: {{ device.machine_states }}</p>
-    
-    <label for="status-select">Change Device Status:</label>
-    <select id="status-select">
-        <option value="ON" {% if device.machine_states == "ON" %}selected{% endif %}>On</option>
-        <option value="OFF" {% if device.machine_states == "OFF" %}selected{% endif %}>Off</option>
-    </select>
-    <button id="change-status-button">Change Status</button>
+
+    <p id="device-status">
+        <strong>Status:</strong> 
+        <span id="status-display" style="color: {% if device.status == 'ON' %}green{% else %}red{% endif %};">
+            {{ device.status }}
+        </span>        
+    </p>
+
+    <hr>
+
+    <h2>Retrieve Heartbeat Data</h2>
+    <button id="simulate-heartbeat">Simulate Heartbeat</button>
+    <div id="heartbeat-data" style="margin-top: 10px;">
+        <!-- Heartbeat data will display here -->
+    </div>
+    <p id="last-heartbeat">Last Heartbeat: Not Available</p>
 
     <hr>
 
@@ -92,11 +97,6 @@
     <label for="mqtt-broker">Enter MQTT Broker Address:</label>
     <input type="text" id="mqtt-broker" required>
     <button id="connect-button">Connect</button>
-
-    <hr>
-
-    <div id="heartbeat-data">
-        <!-- Heartbeat data will be displayed here -->
-    </div>
 </body>
+
 </html>

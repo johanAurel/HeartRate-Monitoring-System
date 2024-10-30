@@ -1,18 +1,15 @@
-import random
-import json
-import time
-import paho.mqtt.client as mqtt
-from django.http import JsonResponse, HttpResponse
+from django.contrib import messages
+from django.http import JsonResponse
+from django.contrib.auth.models import User
+from .forms import CustomAuthenticationForm, CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
+from .models import Device
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Device
-from .forms import CustomAuthenticationForm, CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
-from .utils import  publish_device_status
+from .utils import  *
 
 
+heartbeats = []
 ABNORMAL_HEARTBEAT_THRESHOLD = 100
 def conditional_home(request):
     if request.user.is_authenticated:
@@ -65,6 +62,7 @@ def password_management_disabled(request):
     return render(request, 'password_disabled.html')
 
 # USERS
+@login_required
 def user_list(request):
     if request.user.is_superuser:
         users = User.objects.all()
@@ -74,6 +72,7 @@ def user_list(request):
     return render(request, 'user_list.html', {'users': users})
 
 # DEVICES
+@login_required
 def user_devices(request, username):
     user = get_object_or_404(User, username=username)
     devices = Device.objects.filter(user=user)
@@ -129,31 +128,32 @@ def change_device_status(request):
     return render(request, 'change_device_status.html', {'device': device})
 
 # HEARTBEAT
+@login_required
 def heartbeat_rate(request, device_id):
     device = get_object_or_404(Device, id=device_id)
 
     if request.method == "POST":
-        device.status = request.POST.get("status", device.status)
-        device.save()
-        return JsonResponse({'status': device.status})
+        action = request.POST.get("action")
 
+        if action == "update_status":
+            # Update the device status
+            device.status = request.POST.get("status", device.status)
+            device.save()
+            return JsonResponse({'status': device.status})
+
+        elif action == "connect_mqtt":
+            # Connect to MQTT broker
+            mqtt_broker = request.POST.get("mqtt_broker")
+            success = connect_to_mqtt(mqtt_broker)
+            return JsonResponse({'message': 'Connected to MQTT Broker', 'broker': mqtt_broker}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
+
+        elif action == "simulate_heartbeat":
+            # Simulate heartbeat rate
+            heartbeat_data = simulate_heartbeat(device)
+            return JsonResponse({
+                'heartbeat_rate': heartbeat_data['heartbeat_rate'],
+                'last_heartbeat': heartbeat_data['last_heartbeat']
+            })
+
+    # Render the heartbeat rate template
     return render(request, 'heartbeat_rate.html', {'device': device})
-
-#MQTT
-
-def mqtt_connect(request):
-    client.connect(utils.MQTT_BROKER, utils.MQTT_PORT, 60)
-
-  # Allow POST requests without CSRF validation for this example
-def connect_to_mqtt(request):
-    if request.method == 'POST':
-        device_id = request.POST.get('device_id')
-        mqtt_broker = request.POST.get('mqtt_broker')
-        
-        # Here, add your logic to connect to the MQTT broker
-        # For example, you could initialize the MQTT client and connect it
-        
-        # Return a success response
-        return JsonResponse({'message': 'Connected to MQTT Broker', 'broker': mqtt_broker})
-    
-    return JsonResponse({'error': 'Invalid request method'}, status=400)
