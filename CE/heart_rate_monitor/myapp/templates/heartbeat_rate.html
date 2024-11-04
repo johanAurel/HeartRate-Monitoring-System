@@ -8,65 +8,78 @@
     {% load static %}
     <script src="{% static 'js/websocket.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <div id="alert-message" style="display: none; color: red; font-weight: bold;">Heartbeat is too high</div>
+
     <script>
-        $(document).ready(function() {
-            // Connect to MQTT broker
-            $('#connect-button').click(function(e) {
-                e.preventDefault();
+$(document).ready(function() {
+    // Connect to MQTT broker
+    $('#connect-button').click(function(e) {
+        e.preventDefault();
 
-                const deviceId = "{{ device.id }}";
-                const mqttBroker = $('#mqtt-broker').val();
+        const deviceId = "{{ device.id }}";
+        const mqttBroker = $('#mqtt-broker').val();
 
-                $.ajax({
-                    url: "{% url 'connect_to_mqtt' %}",
-                    type: "POST",
-                    data: {
-                        device_id: deviceId,
-                        mqtt_broker: mqttBroker,
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'
-                    },
-                    success: function(response) {
-                        alert('Connected to MQTT Broker: ' + mqttBroker);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error connecting to MQTT Broker:', error);
-                    }
-                });
-            });
-
-            // Simulate heartbeat data
-            $('#simulate-heartbeat').click(function(e) {
-            e.preventDefault();
-
-            const deviceId = "{{ device.id }}";
-
-            $.ajax({
-                url: "{% url 'simulate_heartbeat' %}",
-                type: "POST",
-                data: {
-                    device_id: deviceId,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error simulating heartbeat:', error);
-                }
-            });
-        });
-
-            function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-                $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
-                $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
-
-                if (alert) {
-                    $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
-                } else {
-                    $('#heartbeat-data').css('color', 'black');
-                }
+        $.ajax({
+            url: "{% url 'connect_to_mqtt' %}",
+            type: "POST",
+            data: {
+                device_id: deviceId,
+                mqtt_broker: mqttBroker,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                alert('Connected to MQTT Broker: ' + mqttBroker);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error connecting to MQTT Broker:', error);
             }
         });
+    });
+
+    // Simulate heartbeat data
+    $('#simulate-heartbeat').click(function(e) {
+        e.preventDefault();
+
+        const deviceId = "{{ device.id }}";
+
+        $.ajax({
+            url: "{% url 'simulate_heartbeat' %}",
+            type: "POST",
+            data: {
+                device_id: deviceId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
+                showAlertIfHighHeartbeat(response.heartbeat_rate);  // Check for high heartbeat
+            },
+            error: function(xhr, status, error) {
+                console.error('Error simulating heartbeat:', error);
+            }
+        });
+    });
+
+    function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
+        $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
+        $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
+
+        if (alert) {
+            $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
+        } else {
+            $('#heartbeat-data').css('color', 'black');
+        }
+    }
+
+    function showAlertIfHighHeartbeat(heartbeatRate) {
+        const alertMessageDiv = $('#alert-message');
+        if (heartbeatRate > 100) {
+            alertMessageDiv.text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show();
+        } else {
+            alertMessageDiv.hide();
+        }
+    }
+});
+
     </script>
 </head>
 <body>
