@@ -1,6 +1,6 @@
 from django.urls import path
-from ..myapp.consumer import DeviceConsumer
+from . import consumers
 
 websocket_urlpatterns = [
-    path('ws/devices/', DeviceConsumer.as_asgi()),
+    path('ws/account_changes/', consumers.AccountChangeConsumer.as_asgi()),
 ]

@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/css/styles.css">
     <title>Heartbeat Rate Monitor</title>
-    <script src="../static/js/websocket.js"></script>
+    {% load static %}
+    <script src="{% static 'js/websocket.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -35,25 +36,25 @@
 
             // Simulate heartbeat data
             $('#simulate-heartbeat').click(function(e) {
-                e.preventDefault();
+            e.preventDefault();
 
-                const deviceId = "{{ device.id }}";
+            const deviceId = "{{ device.id }}";
 
-                $.ajax({
-                    url: "{% url 'simulate_heartbeat' %}",
-                    type: "POST",
-                    data: {
-                        device_id: deviceId,
-                        'csrfmiddlewaretoken': '{{ csrf_token }}'
-                    },
-                    success: function(response) {
-                        updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error simulating heartbeat:', error);
-                    }
-                });
+            $.ajax({
+                url: "{% url 'simulate_heartbeat' %}",
+                type: "POST",
+                data: {
+                    device_id: deviceId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error simulating heartbeat:', error);
+                }
             });
+        });
 
             function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
                 $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');

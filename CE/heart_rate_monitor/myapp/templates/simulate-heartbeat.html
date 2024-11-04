@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/styles.css">
+    <h2>Retrieve Heartbeat Data</h2>
+     <script src="../static/js/websocket.js"></script>
+<button id="simulate-heartbeat">Simulate Heartbeat</button>
+<div id="heartbeat-data" style="margin-top: 10px;">
+    <!-- Heartbeat data will display here -->
+</div>
+<p id="last-heartbeat">Last Heartbeat: Not Available</p>
+
+<script>
+    $(document).ready(function() {
+        $('#simulate-heartbeat').click(function(e) {
+            e.preventDefault();
+
+            const deviceId = "{{ device.id }}";
+
+            $.ajax({
+                url: "{% url 'simulate_heartbeat' %}",
+                type: "POST",
+                data: {
+                    device_id: deviceId,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error simulating heartbeat:', error);
+                }
+            });
+        });
+
+        function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat) {
+            $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
+            $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
+        }
+    });
+</script>

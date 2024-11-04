@@ -17,7 +17,8 @@
         {% for device in devices %}
         <div class="device-card" id="device-{{ device.id }}">
             <h5>Device ID: {{ device.id }}</h5>
-            <a href="{% url 'heartbeat' device.id %}">View Heartbeat Rate</a>
+            <a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a>
+
         </div>
         {% endfor %}
     </div>

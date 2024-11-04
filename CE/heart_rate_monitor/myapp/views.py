@@ -3,6 +3,8 @@ from django.http import JsonResponse
 from django.contrib.auth.models import User
 from .forms import CustomAuthenticationForm, CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
 from .models import Device
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -58,6 +60,22 @@ def logout_view(request):
     logout(request)  # Logout the user
     return redirect('conditional_home')  # Redirect to conditional home after logout
 
+@login_required
+def update_account(request):
+    # Make changes to the user account here
+
+    # Once changes are made, trigger a WebSocket message
+    channel_layer = get_channel_layer()
+    group_name = f"account_changes_{request.user.id}"
+
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            "type": "account_update",
+            "message": "Your account details have been updated!",
+        }
+    )
+    
 def password_management_disabled(request):
     return render(request, 'password_disabled.html')
 
@@ -129,8 +147,10 @@ def change_device_status(request):
 
 # HEARTBEAT
 @login_required
-def heartbeat_rate(request, device_id):
-    device = get_object_or_404(Device, id=device_id)
+def heartbeat_rate(request):
+    
+    device_id = request.GET.get('id')
+    device = get_object_or_404(Device, id = device_id)
 
     if request.method == "POST":
         action = request.POST.get("action")
