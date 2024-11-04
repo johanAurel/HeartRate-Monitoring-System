@@ -63,8 +63,8 @@ $(document).ready(function() {
         });
     });
 
-    // Simulate heartbeat data
-    $('#simulate-heartbeat').click(function(e) {
+// Simulate heartbeat data
+$('#simulate-heartbeat').click(function(e) {
         e.preventDefault();
 
         const deviceId = "{{ device.id }}";
@@ -96,7 +96,6 @@ $(document).ready(function() {
             });
         }, 1000); // Call every 1000 milliseconds (1 second)
     });
-
     // Stop generating heartbeat data
     $('#stop-heartbeat').click(function(e) {
         e.preventDefault();
@@ -110,19 +109,17 @@ $(document).ready(function() {
     });
 
     function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-       $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
-       $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
+        $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
+        $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
 
-       if (alert) {
-           $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
-           $('#alert-message').text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show();
-        } 
-       else {
-           $('#heartbeat-data').css('color', 'black');
-           $('#alert-message').hide();
+        if (alert) {
+            $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
+            $('#alert-message').text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show().css('color', 'red');
+        } else {
+            $('#heartbeat-data').css('color', 'black');
+            $('#alert-message').hide();
         }
     }
-
 
     function displayRecentHeartbeats(recentHeartbeats) {
         const heartbeatHistoryDiv = $('#recent-heartbeats');
@@ -133,17 +130,16 @@ $(document).ready(function() {
         });
     }
 
-
     function displayRecentAlerts(recentAlerts) {
-       const alertHistoryDiv = $('#recent-alerts');
-       alertHistoryDiv.empty(); // Clear previous entries
-       recentAlerts.forEach(function(alert) {
-          const alertElement = `<div>${alert.message} at ${alert.timestamp}</div>`;
-          alertHistoryDiv.append(alertElement);
+        const alertHistoryDiv = $('#recent-alerts');
+        alertHistoryDiv.empty(); // Clear previous entries
+        recentAlerts.forEach(function(alert) {
+            const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
+            alertHistoryDiv.append(alertElement);
         });
     }
+});
 
-})
 </script>
 </head>
 <body>
