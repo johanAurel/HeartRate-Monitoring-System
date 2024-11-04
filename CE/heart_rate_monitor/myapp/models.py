@@ -28,7 +28,7 @@ class Heartbeat(models.Model):
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     last_heartbeat = models.DateTimeField(null=True)
-    heart_rate = models.IntegerField(null=True)
+    heartbeat_rate = models.IntegerField(null=True)
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -38,3 +38,26 @@ class Heartbeat(models.Model):
         return f"{self.device.device_name} - {self.heart_rate} bpm at {self.last_heartbeat}"
     
 
+class Alert(models.Model):
+   
+   device = models.ForeignKey(Device, on_delete=models.CASCADE)
+   heartbeat = models.ForeignKey(Heartbeat, on_delete=models.CASCADE)
+   alert_message = models.CharField(max_length=255)
+   
+   def clean(self):
+         
+         if self.heartbeat.heartbeat_rate <= 100:
+            raise ValidationError('Heartbeat rate must be greater than 100 BPM.')
+
+   def save(self, *args, **kwargs):
+        # Set heartbeat rate and last heartbeat based on the related heartbeat instance
+        if self.heartbeat:
+            self.heartbeat_rate = self.heartbeat.heartbeat_rate
+            self.last_heartbeat = self.heartbeat.last_heartbeat
+            self.device = self.heartbeat.device  # Set the device for the alert
+        # Validate before saving
+        self.clean()
+        super().save(*args, **kwargs)
+   
+   def __str__(self):
+        return f"Alert for {self.device.device_name} - {self.alert_message} at {self.heartbeat.last_heartbeat}"

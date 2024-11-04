@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from .models import Device
+from .models import Device, Alert ,Heartbeat
 
 # MQTT configuration
 MQTT_PORT = 1883
@@ -77,14 +77,32 @@ def simulate_heartbeat(request):
     device = get_object_or_404(Device, id=device_id)
 
     # Generate a random heartbeat rate for simulation
-    heartbeat_rate = random.randint(40, 110)
+    heartbeat_rate = random.randint(60, 115)
     timestamp = timezone.now().isoformat()
+    
+    alert = None
+    if heartbeat_rate > 100:
+        alert_message = f"High Heartbeat Rate: {heartbeat_rate} BPM!"
+        alert = Alert.objects.create(heartbeat_rate=heartbeat_rate, last_heartbeat=timestamp, alert_message=alert_message, device=device)
+
+    # Fetch recent heartbeats and alerts to send to the template
+    recent_heartbeats = Heartbeat.objects.filter(device=device).order_by('-last_heartbeat')[:5]  # Last 5 heartbeats
+    recent_alerts = Alert.objects.filter(device=device).order_by('-id')[:5]  # Last 5 alerts (ordered by ID)
 
     return JsonResponse({
         'heartbeat_rate': heartbeat_rate,
         'last_heartbeat': timestamp,
+        'alert': alert is not None,
+        'recent_heartbeats': [
+            {'heartbeat_rate': hb.heartbeat_rate, 'timestamp': hb.last_heartbeat} 
+            for hb in recent_heartbeats
+        ],
+        'recent_alerts': [
+            {'message': alert.alert_message, 'timestamp': alert.heartbeat.last_heartbeat} 
+            for alert in recent_alerts
+        ],
     })
-    
+
 # Main MQTT handler
 def connect_to_mqtt(request, mqtt_broker='localhost'):
     """

@@ -16,8 +16,9 @@
     <div class="device-list">
         {% for device in devices %}
         <div class="device-card" id="device-{{ device.id }}">
-            <h5>Device ID: {{ device.id }}</h5>
-            <a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a>
+            <h3><span style="color: rgb(34, 159, 231);">{{ device.device_name }}</span></h3>
+            <h5>Device ID: <span style="color: rgb(34, 159, 231);">{{ device.id }}</span></h5>
+            <button type="button"><a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a></button>
 
         </div>
         {% endfor %}
@@ -25,7 +26,7 @@
 </body>
 <footer>
     <div style="text-align: center;">
-        <button type="button"><a href="{% url 'add_device' %}">Add Device</a></button>
+        <button type="button"><a href="{% url 'add_device' %}" style="margin-left: 50px;margin-top: 20px;">Add Device</a></button>
     </div>
 </footer>
 </html>

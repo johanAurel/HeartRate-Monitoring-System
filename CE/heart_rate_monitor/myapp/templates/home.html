@@ -9,10 +9,10 @@
 <body>
     <h1>Welcome to Heart Rate Monitor</h1>
     {% if user.is_authenticated %}
-        <p>Hello, {{ user.username }}!</p>
-        <a href="{% url 'logout' %}">Logout</a>
-        <a href="{% url 'device_list' %}">View Devices</a>
-        <a href="{% url 'user_list' %}">User List</a>
+        <p style="text-align: center;">Hello, <span style="color:  rgb(34, 159, 231);">{{ user.username }}</span>!</p>
+        <button type="button"><a href="{% url 'logout' %}">Logout</a></button>
+        <button type="button"><a href="{% url 'device_list' %}">View Devices</a></button>
+        <button type="button"><a href="{% url 'user_list' %}">User List</a></button>
     {% else %}
         <p><a href="{% url 'login' %}">Login</a> | <a href="{% url 'register' %}">Register</a></p>
     {% endif %}

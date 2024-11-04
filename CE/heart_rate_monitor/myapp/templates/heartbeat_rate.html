@@ -39,14 +39,13 @@ $(document).ready(function() {
     });
 
     // Toggle device status
-$('#toggle-status').click(function(e) {
+    $('#toggle-status').click(function(e) {
         e.preventDefault();
 
         const deviceId = "{{ device.id }}";  // Ensure this variable is correctly set
-        const currentStatus = $('#status-display').text().trim();
 
         $.ajax({
-            url: "{% url 'toggle_device_status' %}",  // Ensure this URL is correct
+            url: "{% url 'toggle_device_status' %}",
             type: "POST",
             data: {
                 device_id: deviceId,
@@ -84,8 +83,12 @@ $('#toggle-status').click(function(e) {
                     'csrfmiddlewaretoken': '{{ csrf_token }}'
                 },
                 success: function(response) {
+                    // Update heartbeat display
                     updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
-                    showAlertIfHighHeartbeat(response.heartbeat_rate);
+
+                    // Display recent heartbeats and alerts
+                    displayRecentHeartbeats(response.recent_heartbeats);
+                    displayRecentAlerts(response.recent_alerts);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error simulating heartbeat:', error);
@@ -107,27 +110,40 @@ $('#toggle-status').click(function(e) {
     });
 
     function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-        $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
-        $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
+       $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
+       $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
 
-        if (alert) {
-            $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
-        } else {
-            $('#heartbeat-data').css('color', 'black');
+       if (alert) {
+           $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
+           $('#alert-message').text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show();
+        } 
+       else {
+           $('#heartbeat-data').css('color', 'black');
+           $('#alert-message').hide();
         }
     }
 
-    function showAlertIfHighHeartbeat(heartbeatRate) {
-        const alertMessageDiv = $('#alert-message');
-        if (heartbeatRate > 100) {
-            alertMessageDiv.text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show();
-        } else {
-            alertMessageDiv.hide();
-        }
+
+    function displayRecentHeartbeats(recentHeartbeats) {
+        const heartbeatHistoryDiv = $('#recent-heartbeats');
+        heartbeatHistoryDiv.empty(); // Clear previous entries
+        recentHeartbeats.forEach(function(hb) {
+            const hbElement = `<div>${hb.heartbeat_rate} BPM at ${hb.timestamp}</div>`;
+            heartbeatHistoryDiv.append(hbElement);
+        });
     }
-});
 
 
+    function displayRecentAlerts(recentAlerts) {
+       const alertHistoryDiv = $('#recent-alerts');
+       alertHistoryDiv.empty(); // Clear previous entries
+       recentAlerts.forEach(function(alert) {
+          const alertElement = `<div>${alert.message} at ${alert.timestamp}</div>`;
+          alertHistoryDiv.append(alertElement);
+        });
+    }
+
+})
 </script>
 </head>
 <body>
@@ -135,7 +151,7 @@ $('#toggle-status').click(function(e) {
         <button type="button"><a href="{% url 'home' %}">Home</a></button>
     </div>
     
-    <h1>Heartbeat Rate Monitor for {{ device.name }}</h1>
+    <h1>Heartbeat Rate Monitor for <span style="color: rgb(34, 159, 231);">{{ device.device_name }}</span></h1>
 
    <h2>Device Status</h2>
 <p id="device-status">
@@ -159,13 +175,12 @@ $('#toggle-status').click(function(e) {
     <h2>Simulate Heartbeat</h2>
 <button id="simulate-heartbeat">Simulate Heartbeat</button>
 <button id="stop-heartbeat" style="display: none;">Stop</button>
-<div id="heartbeat-data" style="margin-top: 10px;">
-    <!-- Heartbeat data will display here -->
+<div id="recent-heartbeats" style="margin-top: 20px;">
+    <h3>Recent Heartbeats</h3>
 </div>
-<p id="last-heartbeat">Last Heartbeat: Not Available</p>
-<div id="alert-message" style="display: none; color: red; font-weight: bold;"></div>
+<div id="recent-alerts" style="margin-top: 20px;">
+    <h3>Recent Alerts</h3>
 </div>
-
 
     <hr>
 
