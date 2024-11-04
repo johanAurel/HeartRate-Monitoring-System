@@ -55,6 +55,22 @@ def send_mqtt_alert(heartbeat_rate):
 # Simulation endpoint
 
 @login_required
+def toggle_device_status(request):
+    if request.method == "POST":
+        device_id = request.POST.get("device_id")
+        device = get_object_or_404(Device, id=device_id)
+
+        # Toggle the device status
+        if device.status == "ON":
+            device.status = "OFF"
+        else:
+            device.status = "ON"
+        device.save()
+
+        return JsonResponse({'status': device.status})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+    
+@login_required
 @require_POST
 def simulate_heartbeat(request):
     device_id = request.POST.get('device_id')
