@@ -20,4 +20,5 @@ urlpatterns = [
     path('devices/change-status/', change_device_status, name='change_device_status'), 
     path('connect-to-mqtt/', connect_to_mqtt, name='connect_to_mqtt'),
     path('simulate-heartbeat/', simulate_heartbeat, name='simulate_heartbeat'),
+    path('toggle-status/', toggle_device_status, name='toggle_device_status'),
 ]   

@@ -155,7 +155,7 @@ $('#toggle-status').click(function(e) {
 
 
     <hr>
-
+<div id="heartbeat-section" {% if device.status == 'OFF' %}style="display: none;"{% elif device.status == 'ON' %} style ="display: block;"{% endif %}>
     <h2>Simulate Heartbeat</h2>
 <button id="simulate-heartbeat">Simulate Heartbeat</button>
 <button id="stop-heartbeat" style="display: none;">Stop</button>
@@ -164,6 +164,7 @@ $('#toggle-status').click(function(e) {
 </div>
 <p id="last-heartbeat">Last Heartbeat: Not Available</p>
 <div id="alert-message" style="display: none; color: red; font-weight: bold;"></div>
+</div>
 
 
     <hr>
