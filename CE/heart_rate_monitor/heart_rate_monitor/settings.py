@@ -154,7 +154,7 @@ CHANNEL_LAYERS = {
 }
 
 AUTHENTICATION_BACKENDS = [
-    'heart_rate_monitor.auth_backend.MySQLAuthBackend',  # Your custom backend
+    'heart_rate_monitor.auth_backend.SQLiteAuthBackend',  # Your custom backend
     'django.contrib.auth.backends.ModelBackend',      # Fallback to default Django backend
 ]
 
