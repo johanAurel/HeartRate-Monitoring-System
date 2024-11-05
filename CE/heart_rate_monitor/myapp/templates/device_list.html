@@ -18,9 +18,16 @@
         <div class="device-card" id="device-{{ device.id }}">
             <h3><span style="color: rgb(34, 159, 231);">{{ device.device_name }}</span></h3>
             <h5>Device ID: <span style="color: rgb(34, 159, 231);">{{ device.id }}</span></h5>
-            <button type="button"><a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a></button>
-
+            <p id="device-status">Current Status: 
+                <span {% if device.status == 'ON' %}style="color: green"{% else %}style="color: red"{% endif %}>
+                    {{ device.status }}
+                </span>
+                <span>owner: {{device.user.username }}</span>
+            </p>
+                        <button type="button"><a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a></button>
         </div>
+        {% empty %}
+            <p>No devices found for your account.</p>
         {% endfor %}
     </div>
 </body>

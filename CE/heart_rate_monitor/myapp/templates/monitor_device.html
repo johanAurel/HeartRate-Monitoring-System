@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/css/styles.css">
+
+<head>
+    <!-- Include necessary meta tags and links -->
+    <title>Monitor Device - {{ device.device_name }}</title>
+</head>
+<body>
+    <h1>Monitoring Device: {{ device.device_name }}</h1>
+    
+    <h2>Device Status</h2>
+    <p>Status: <span style="color: {% if device.status == 'ON' %}green{% else %}red{% endif %};">{{ device.status }}</span></p>
+
+    <h2>Alerts</h2>
+    <ul>
+        {% for alert in alerts %}
+            <li>{{ alert.alert_message }} at {{ alert.created_at }}</li>
+        {% empty %}
+            <li>No alerts found.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Other sections of your monitoring page -->
+</body>
+</html>

@@ -1,189 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../static/css/styles.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../static/css/styles.css" />
     <title>Heartbeat Rate Monitor</title>
     {% load static %}
     <script src="{% static 'js/websocket.js' %}"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <div id="alert-message" style="display: none; color: red; font-weight: bold;">Heartbeat is too high</div>
+    <div
+      id="alert-message"
+      style="display: none; color: red; font-weight: bold;"
+    >
+      Heartbeat is too high
+    </div>
 
     <script>
-$(document).ready(function() {
-    let heartbeatInterval; // Variable to store the interval ID
+      $(document).ready(function () {
+        let heartbeatInterval; // Variable to store the interval ID
+        let deviceSocket;
 
-    // Connect to MQTT broker
-    $('#connect-button').click(function(e) {
-        e.preventDefault();
+        // Connect to MQTT broker
 
-        const deviceId = "{{ device.id }}";
-        const mqttBroker = $('#mqtt-broker').val();
+        $("#connect-button").click(function (e) {
+          e.preventDefault();
 
-        $.ajax({
+          const deviceId = "{{ device.id }}";
+          const mqttBroker = $("#mqtt-broker").val();
+
+          $.ajax({
             url: "{% url 'connect_to_mqtt' %}",
             type: "POST",
             data: {
-                device_id: deviceId,
-                mqtt_broker: mqttBroker,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
+              device_id: deviceId,
+              mqtt_broker: mqttBroker,
+              csrfmiddlewaretoken: "{{ csrf_token }}",
             },
-            success: function(response) {
-                alert('Connected to MQTT Broker: ' + mqttBroker);
+            success: function (response) {
+              alert("Connected to MQTT Broker: " + mqttBroker);
+
+              // Initiate WebSocket to listen for alerts (assuming the WebSocket is set up per device)
+              connectWebSocket(deviceId);
             },
-            error: function(xhr, status, error) {
-                console.error('Error connecting to MQTT Broker:', error);
-            }
+            error: function (xhr, status, error) {
+              console.error("Error connecting to MQTT Broker:", error);
+            },
+          });
         });
-    });
 
-    // Toggle device status
-    $('#toggle-status').click(function(e) {
-        e.preventDefault();
+        // Toggle device status
 
-        const deviceId = "{{ device.id }}";  // Ensure this variable is correctly set
+        $("#toggle-status").click(function (e) {
+          e.preventDefault();
 
-        $.ajax({
+          const deviceId = "{{ device.id }}"; // Ensure this variable is correctly set
+
+          $.ajax({
             url: "{% url 'toggle_device_status' %}",
             type: "POST",
             data: {
-                device_id: deviceId,
-                'csrfmiddlewaretoken': '{{ csrf_token }}'
+              device_id: deviceId,
+              csrfmiddlewaretoken: "{{ csrf_token }}",
             },
-            success: function(response) {
-                // Update the status display and button text
-                $('#status-display').text(response.status).css('color', response.status === "ON" ? "green" : "red");
-                $('#toggle-status').text(response.status === "ON" ? "Turn OFF" : "Turn ON");
-                alert('Device status changed to: ' + response.status);
+            success: function (response) {
+              // Update the status display and button text
+              $("#status-display")
+                .text(response.status)
+                .css("color", response.status === "ON" ? "green" : "red");
+              $("#toggle-status").text(
+                response.status === "ON" ? "Turn OFF" : "Turn ON"
+              );
+              alert("Device status changed to: " + response.status);
             },
-            error: function(xhr, status, error) {
-                console.error('Error changing device status:', error);
-            }
+            error: function (xhr, status, error) {
+              console.error("Error changing device status:", error);
+            },
+          });
         });
-    });
 
-// Simulate heartbeat data
-$('#simulate-heartbeat').click(function(e) {
-        e.preventDefault();
+        // Variable to store the interval ID
 
-        const deviceId = "{{ device.id }}";
+        // Simulate heartbeat data
 
-        // Disable the simulate button and show the stop button
-        $(this).prop('disabled', true);
-        $('#stop-heartbeat').show();
+        $("#simulate-heartbeat").click(function (e) {
+          e.preventDefault();
 
-        // Start generating heartbeat every second
-        heartbeatInterval = setInterval(function() {
+          const deviceId = "{{ device.id }}";
+
+          // Disable the simulate button and show the stop button
+          $(this).prop("disabled", true);
+          $("#stop-heartbeat").show();
+
+          // Start generating heartbeat every second
+          heartbeatInterval = setInterval(function () {
             $.ajax({
-                url: "{% url 'simulate_heartbeat' %}",
-                type: "POST",
-                data: {
-                    device_id: deviceId,
-                    'csrfmiddlewaretoken': '{{ csrf_token }}'
-                },
-                success: function(response) {
-                    // Update heartbeat display
-                    updateHeartbeatDisplay(response.heartbeat_rate, response.last_heartbeat, response.alert);
+              url: "{% url 'simulate_heartbeat' %}",
+              type: "POST",
+              data: {
+                device_id: deviceId,
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+              },
+              success: function (response) {
+                // Update heartbeat display
+                updateHeartbeatDisplay(
+                  response.heartbeat_rate,
+                  response.last_heartbeat,
+                  response.alert
+                );
 
-                    // Display recent heartbeats and alerts
-                    displayRecentHeartbeats(response.recent_heartbeats);
-                    displayRecentAlerts(response.recent_alerts);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error simulating heartbeat:', error);
-                }
+                // Display recent heartbeats and alerts (in monitor_device.html, not here)
+                displayRecentHeartbeats(response.recent_heartbeats);
+                displayRecentAlerts(response.recent_alerts);
+              },
+              error: function (xhr, status, error) {
+                console.error("Error simulating heartbeat:", error);
+              },
             });
-        }, 1000); // Call every 1000 milliseconds (1 second)
-    });
-    // Stop generating heartbeat data
-    $('#stop-heartbeat').click(function(e) {
-        e.preventDefault();
-        
-        // Clear the interval to stop heartbeat generation
-        clearInterval(heartbeatInterval);
-        // Re-enable the simulate button and hide the stop button
-        $('#simulate-heartbeat').prop('disabled', false);
-        $(this).hide();
-        $('#alert-message').hide(); // Hide any alerts when stopped
-    });
-
-    function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-        $('#heartbeat-data').text('Heartbeat Rate: ' + heartbeatRate + ' BPM');
-        $('#last-heartbeat').text('Last Heartbeat: ' + lastHeartbeat);
-
-        if (alert) {
-            $('#heartbeat-data').css('color', 'red').append(' - Alert: High Heartbeat');
-            $('#alert-message').text('ALERT: High Heartbeat Rate - ' + heartbeatRate + ' BPM!').show().css('color', 'red');
-        } else {
-            $('#heartbeat-data').css('color', 'black');
-            $('#alert-message').hide();
-        }
-    }
-
-    function displayRecentHeartbeats(recentHeartbeats) {
-        const heartbeatHistoryDiv = $('#recent-heartbeats');
-        heartbeatHistoryDiv.empty(); // Clear previous entries
-        recentHeartbeats.forEach(function(hb) {
-            const hbElement = `<div>${hb.heartbeat_rate} BPM at ${hb.timestamp}</div>`;
-            heartbeatHistoryDiv.append(hbElement);
+          }, 1000); // Call every 1000 milliseconds (1 second)
         });
-    }
 
-    function displayRecentAlerts(recentAlerts) {
-        const alertHistoryDiv = $('#recent-alerts');
-        alertHistoryDiv.empty(); // Clear previous entries
-        recentAlerts.forEach(function(alert) {
+        // Stop generating heartbeat data
+
+        $("#stop-heartbeat").click(function (e) {
+          e.preventDefault();
+
+          // Clear the interval to stop heartbeat generation
+          clearInterval(heartbeatInterval);
+          // Re-enable the simulate button and hide the stop button
+          $("#simulate-heartbeat").prop("disabled", false);
+          $(this).hide();
+          $("#alert-message").hide(); // Hide any alerts when stopped
+        });
+
+        // Function to update the current heartbeat rate on screen
+
+        function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
+          $("#heartbeat-data").text(
+            "Heartbeat Rate: " + heartbeatRate + " BPM"
+          );
+          $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
+          if (heartbeatRate > 100) {
+            $("#heartbeat-data").css("color", "red");
+            $("#alert-message")
+              .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
+              .show();
+            setTimeout(function () {
+              $("#alert-message").fadeOut();
+            }, 3000); // Hide alert after 3 seconds
+          } else if (heartbeatRate < 80) {
+            $("#heartbeat-data").css("color", "green");
+          } else {
+            $("#heartbeat-data").css("color", "blue");
+          }
+        }
+
+        // Function to display recent heartbeats in the monitor_device page
+        function displayRecentHeartbeats(recentHeartbeats) {
+          const heartbeatHistoryDiv = $("#recent-heartbeats");
+          heartbeatHistoryDiv.empty(); // Clear previous entries
+          recentHeartbeats.forEach(function (hb) {
+            const hbElement = `
+        <div style="color: ${
+          hb.heartbeat_rate > 100
+            ? "red"
+            : hb.heartbeat_rate < 80
+            ? "green"
+            : "black"
+        };">
+          ${hb.heartbeat_rate} BPM at ${hb.timestamp}
+        </div>
+      `;
+
+            heartbeatHistoryDiv.append(hbElement);
+          });
+        }
+
+        // Function to display recent alerts
+        function displayRecentAlerts(recentAlerts) {
+          const alertHistoryDiv = $("#recent-alerts");
+          alertHistoryDiv.empty(); // Clear previous entries
+          recentAlerts.forEach(function (alert) {
             const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
             alertHistoryDiv.append(alertElement);
-        });
-    }
-});
+          });
+        }
 
-</script>
-</head>
-<body>
+        function connectWebSocket(deviceId) {
+          deviceSocket = new WebSocket(
+            `ws://${window.location.host}/ws/device/${deviceId}/`
+          );
+
+          deviceSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            const alertMessage = data.message;
+
+            if (alertMessage) {
+              $("#alert-message").text(alertMessage).show();
+              setTimeout(function () {
+                $("#alert-message").fadeOut();
+              }, 3000); // Hide alert after 3 seconds
+            }
+          };
+
+          deviceSocket.onclose = function (e) {
+            console.error("WebSocket closed unexpectedly");
+          };
+        }
+
+        // Initialize WebSocket connection when the page loads
+        const deviceId = "{{ device.id }}";
+        connectWebSocket(deviceId);
+      });
+    </script>
+  </head>
+  <body>
     <div style="text-align: center;">
-        <button type="button"><a href="{% url 'home' %}">Home</a></button>
+      <button
+        type="button"
+        style="background-color: rgb(34, 159, 231); color: white;"
+      >
+        <a href="{% url 'home' %}" style="color: white; text-decoration: none;"
+          >Home</a
+        >
+      </button>
     </div>
-    
-    <h1>Heartbeat Rate Monitor for <span style="color: rgb(34, 159, 231);">{{ device.device_name }}</span></h1>
 
-   <h2>Device Status</h2>
-<p id="device-status">
-    <strong>Status:</strong> 
-    <span id="status-display" style="color: {% if device.status == 'ON' %}green{% else %}red{% endif %};">
+    <h1>
+      Heartbeat Rate Monitor for
+      <span style="color: rgb(34, 159, 231);">{{ device.device_name }}</span>
+    </h1>
+
+    <h2>Device Status</h2>
+    <p id="device-status">
+      <strong>Status:</strong>
+      <span
+        id="status-display"
+        style="color: {% if device.status == 'ON' %}green{% else %}red{% endif %};"
+      >
         {{ device.status }}
-    </span>        
-</p>
-<button id="toggle-status">
-    {% if device.status == 'ON' %}
-        Turn OFF
-    {% else %}
-        Turn ON
-    {% endif %}
-</button>
+      </span>
+    </p>
+    <button
+      id="toggle-status"
+      style="background-color: rgb(34, 159, 231); color: white;"
+    >
+      {% if device.status == 'ON' %} Turn OFF {% else %} Turn ON {% endif %}
+    </button>
 
-
-
-    <hr>
-<div id="heartbeat-section" {% if device.status == 'OFF' %}style="display: none;"{% elif device.status == 'ON' %} style ="display: block;"{% endif %}>
+    <hr />
+    <div id="heartbeat-section" {% if device.status == 'OFF' %}style="display:
+    none;"{% elif device.status == 'ON' %} style ="display: block;"{% endif %}>
     <h2>Simulate Heartbeat</h2>
-<button id="simulate-heartbeat">Simulate Heartbeat</button>
-<button id="stop-heartbeat" style="display: none;">Stop</button>
-<div id="recent-heartbeats" style="margin-top: 20px;">
-    <h3>Recent Heartbeats</h3>
-</div>
-<div id="recent-alerts" style="margin-top: 20px;">
-    <h3>Recent Alerts</h3>
-</div>
+    <button
+      id="simulate-heartbeat"
+      style="background-color: rgb(34, 159, 231); color: white;"
+    >
+      Simulate Heartbeat
+    </button>
+    <button
+      id="stop-heartbeat"
+      style="display: none; background-color: rgb(34, 159, 231); color: white;"
+    >
+      Stop
+    </button>
+    <div id="recent-heartbeats" style="margin-top: 20px;">
+      <h3>Recent Heartbeats</h3>
+      <!-- List of heartbeats -->
+    </div>
 
-    <hr>
+    <div id="recent-alerts" style="margin-top: 20px;">
+      <h3>Recent Alerts</h3>
+      <!-- List of alerts -->
+    </div>
+
+    <hr />
 
     <h2>Connect to MQTT Broker</h2>
     <label for="mqtt-broker">Enter MQTT Broker Address:</label>
-    <input type="text" id="mqtt-broker" required>
+    <input type="text" id="mqtt-broker" required />
     <button id="connect-button">Connect</button>
-</body>
-
+  </body>
 </html>

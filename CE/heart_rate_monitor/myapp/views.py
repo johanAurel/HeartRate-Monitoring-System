@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from .forms import CustomAuthenticationForm, CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
 from .models import Device
 from channels.layers import get_channel_layer
@@ -8,11 +8,10 @@ from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from .utils import  *
 
 
-heartbeats = []
-ABNORMAL_HEARTBEAT_THRESHOLD = 100
 def conditional_home(request):
     if request.user.is_authenticated:
         return render(request, 'home.html')  # Show home.html if logged in
@@ -83,6 +82,7 @@ def password_management_disabled(request):
 @login_required
 def user_list(request):
     if request.user.is_superuser:
+        User = get_user_model()
         users = User.objects.all()
     else:
         users = [request.user]
@@ -91,21 +91,29 @@ def user_list(request):
 
 # DEVICES
 @login_required
-def user_devices(request, username):
-    user = get_object_or_404(User, username=username)
-    devices = Device.objects.filter(user=user)
-    return render(request, 'user_devices.html', {'devices': devices, 'user': user})
-
 def device_list(request):
-    devices = Device.objects.all()  # Fetch all devices
+    # Check if the user is a superuser or not
+    if request.user.is_superuser:
+        # Superuser sees all devices
+        devices = Device.objects.all()
+    else:
+        # Regular user sees only their devices
+        devices = Device.objects.filter(user=request.user)
 
     # Check for POST request to handle device status change
     if request.method == "POST":
         device_id = request.POST.get("device_id")
         status = request.POST.get("status")
         
-        # Update the device status in the database
+        # Fetch the device based on the logged-in user and device_id
         device = get_object_or_404(Device, id=device_id)
+        
+        # Ensure the device belongs to the logged-in user or is a superuser
+        if device.user != request.user and not request.user.is_superuser:
+            # Return an error or show a message
+            return redirect('device_list')  # Redirect to the device list page if not authorized
+        
+        # Update the device status in the database
         device.status = status
         device.save()
         
@@ -114,7 +122,9 @@ def device_list(request):
         
         # Redirect back to the device list page
         return redirect('device_list')
-
+    for device in devices:
+       print(type(device.user.username))  
+       
     return render(request, 'device_list.html', {'devices': devices})
 
 def add_device(request):
@@ -177,3 +187,87 @@ def heartbeat_rate(request):
 
     # Render the heartbeat rate template
     return render(request, 'heartbeat_rate.html', {'device': device})
+
+#MQTT
+@csrf_exempt
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected to MQTT broker with result code {rc}")
+    # Subscribe to the heartbeat topic (e.g., "device/{device_id}/heartbeat")
+    device_id = userdata['device_id']
+    mqtt_client.subscribe(f"device/{device_id}/heartbeat")
+
+def on_message(client, userdata, msg):
+    # Parse the message payload (assuming it's in JSON format)
+    message = json.loads(msg.payload)
+    device_id = userdata['device_id']
+    heartbeat_rate = message.get('heartbeat_rate')
+    last_heartbeat = message.get('last_heartbeat')
+
+    # Process the received heartbeat data
+    device = Device.objects.get(id=device_id)
+    heartbeat = Heartbeat.objects.create(device=device, heartbeat_rate=heartbeat_rate, last_heartbeat=last_heartbeat)
+
+    # Check if the heartbeat rate triggers an alert
+    alert = Heartbeat.check_and_create_alert(device)
+
+    # If an alert was created, send it via WebSocket
+    if alert:
+        send_alert_to_websocket(device, alert.alert_message)
+
+def publish_device_status(device_id, status):
+    """Publish the device status to the MQTT broker."""
+    try:
+        # Ensure we're connected to the broker
+        if not mqtt_client.is_connected():
+            connect_to_mqtt()
+
+        # Define the topic for this device
+        topic = f"{MQTT_TOPIC}/?id={device_id}"
+        
+        # Publish the status message
+        payload = f"{status}"  # The status (ON or OFF)
+        mqtt_client.publish(topic, payload, qos=1)
+        
+        print(f"Published status: {status} for device: {device_id} on topic: {topic}")
+
+    except Exception as e:
+        print(f"Error publishing device status: {e}")
+
+def connect_to_mqtt(device_id, mqtt_broker):
+    """
+    Connects to the MQTT broker and starts subscribing to the device's heartbeat topic.
+    """
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
+
+    # Set up user data for the device
+    userdata = {'device_id': device_id}
+
+    # Connect to the MQTT broker
+    mqtt_client.user_data_set(userdata)
+    mqtt_client.connect(mqtt_broker)
+
+    # Start the MQTT client loop
+    mqtt_client.loop_start()
+
+# Example WebSocket alert notification
+def send_alert_to_websocket(device, alert_message):
+    channel_layer = get_channel_layer()
+    # Send alert message to WebSocket group corresponding to the device
+    channel_layer.group_send(
+        f"device_{device.id}",
+        {
+            "type": "device_alert",
+            "message": alert_message
+        }
+    )
+    # Here it would send an alert via WebSocket to the device
+    # For example, using Django Channels or other real-time technologies
+    # For demonstration, I simulate this as a function:
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.send)(
+        f"device_{device.id}", {
+            "type": "device.alert",
+            "message": alert_message
+        }
+    )
