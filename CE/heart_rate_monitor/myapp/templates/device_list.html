@@ -21,8 +21,8 @@
             <p id="device-status">Current Status: 
                 <span {% if device.status == 'ON' %}style="color: green"{% else %}style="color: red"{% endif %}>
                     {{ device.status }}
-                </span>
-                <span>owner: {{device.user.username }}</span>
+                </span><br />
+                <strong>owner: {{ user.username }}</strong>
             </p>
                         <button type="button"><a href="{% url 'heartbeat' %}?id={{ device.id }}">Monitor Heartbeat</a></button>
         </div>
