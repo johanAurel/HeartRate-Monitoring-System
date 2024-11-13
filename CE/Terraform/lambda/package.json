@@ -1,0 +1,16 @@
+{
+  "name": "heartbeat-monitor",
+  "version": "1.0.0",
+  "description": "AWS Lambda function for processing heartbeat data",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1048.0",
+    "pg": "^8.13.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
