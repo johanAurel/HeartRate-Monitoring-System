@@ -22,31 +22,81 @@
 
         // Connect to MQTT broker
 
+        let mqttClient;
+
+        // Function to connect to AWS IoT endpoint
+        function connectToAWSIoT(endpoint) {
+          if (!endpoint) {
+            alert("Invalid endpoint");
+            return;
+          }
+
+          const clientId =
+            "heartbeatClient-" + Math.floor(Math.random() * 1000000); // Generate a random client ID
+          const topic = "heartbeat/data"; // Topic to subscribe to
+
+          // Configure the AWS IoT endpoint
+          AWS.config.update({
+            region: "us-east-1", // Adjust to your region
+            accessKeyId: "{{ aws_access_key_id }}", // Your AWS Access Key
+            secretAccessKey: "{{ aws_secret_access_key }}", // Your AWS Secret Access Key
+          });
+
+          const iotData = new AWS.IotData({ endpoint: endpoint });
+
+          mqttClient = iotData.getMqttConnection();
+
+          mqttClient.on("message", function (topic, payload) {
+            const data = JSON.parse(payload.toString());
+
+            const last_heartbeat = data.last_heartbeat;
+            const heartbeat_rate = data.heartbeat_rate;
+            const alert =
+              heartbeat_rate > 100 ? "ALERT: High Heartbeat Rate!" : null;
+
+            // Display the values
+            updateHeartbeatDisplay(heartbeat_rate, last_heartbeat, alert);
+          });
+
+          mqttClient.on("connect", function () {
+            console.log("Connected to AWS IoT");
+
+            // Subscribe to the heartbeat topic
+            mqttClient.subscribe(topic, { qos: 1 });
+          });
+
+          mqttClient.connect({
+            clientId: clientId,
+            cleanSession: true,
+            useSSL: true,
+          });
+        }
+
+        // Event listener to handle the "Connect to AWS IoT" button click
         $("#connect-button").click(function (e) {
           e.preventDefault();
 
-          const deviceId = "{{ device.id }}";
-          const mqttBroker = $("#mqtt-broker").val();
+          const endpoint = $("#iot-endpoint").val(); // Get the endpoint entered by the user
 
-          $.ajax({
-            url: "{% url 'connect_to_mqtt' %}",
-            type: "POST",
-            data: {
-              device_id: deviceId,
-              mqtt_broker: mqttBroker,
-              csrfmiddlewaretoken: "{{ csrf_token }}",
-            },
-            success: function (response) {
-              alert("Connected to MQTT Broker: " + mqttBroker);
-
-              // Initiate WebSocket to listen for alerts (assuming the WebSocket is set up per device)
-              connectWebSocket(deviceId);
-            },
-            error: function (xhr, status, error) {
-              console.error("Error connecting to MQTT Broker:", error);
-            },
-          });
+          connectToAWSIoT(endpoint); // Connect to AWS IoT if the endpoint is valid
         });
+
+        // Function to update heartbeat display
+        function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
+          $("#heartbeat-data").text(
+            "Heartbeat Rate: " + heartbeatRate + " BPM"
+          );
+          $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
+
+          if (alert) {
+            $("#alert-message").text(alert).show();
+            setTimeout(function () {
+              $("#alert-message").fadeOut();
+            }, 3000); // Hide alert after 3 seconds
+          } else {
+            $("#alert-message").hide();
+          }
+        }
 
         // Toggle device status
 
@@ -275,9 +325,11 @@
 
     <hr />
 
-    <h2>Connect to MQTT Broker</h2>
-    <label for="mqtt-broker">Enter MQTT Broker Address:</label>
-    <input type="text" id="mqtt-broker" required />
-    <button id="connect-button">Connect</button>
+    <h2>Connect to AWS IoT Endpoint</h2>
+<label for="iot-endpoint">Enter AWS IoT Endpoint:</label>
+<input type="text" id="iot-endpoint" required />
+<button id="connect-button" style="background-color: rgb(34, 159, 231); color: white;">
+  Connect to AWS IoT
+</button>
   </body>
 </html>

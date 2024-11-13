@@ -173,8 +173,7 @@ def heartbeat_rate(request):
 
         elif action == "connect_mqtt":
             # Connect to MQTT broker
-            mqtt_broker = request.POST.get("mqtt_broker")
-            success = connect_to_mqtt(mqtt_broker)
+            success = listen_to_heartbeat(req)
             return JsonResponse({'message': 'Connected to MQTT Broker', 'broker': mqtt_broker}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
 
         elif action == "simulate_heartbeat":
@@ -188,86 +187,3 @@ def heartbeat_rate(request):
     # Render the heartbeat rate template
     return render(request, 'heartbeat_rate.html', {'device': device})
 
-#MQTT
-@csrf_exempt
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected to MQTT broker with result code {rc}")
-    # Subscribe to the heartbeat topic (e.g., "device/{device_id}/heartbeat")
-    device_id = userdata['device_id']
-    mqtt_client.subscribe(f"device/{device_id}/heartbeat")
-
-def on_message(client, userdata, msg):
-    # Parse the message payload (assuming it's in JSON format)
-    message = json.loads(msg.payload)
-    device_id = userdata['device_id']
-    heartbeat_rate = message.get('heartbeat_rate')
-    last_heartbeat = message.get('last_heartbeat')
-
-    # Process the received heartbeat data
-    device = Device.objects.get(id=device_id)
-    heartbeat = Heartbeat.objects.create(device=device, heartbeat_rate=heartbeat_rate, last_heartbeat=last_heartbeat)
-
-    # Check if the heartbeat rate triggers an alert
-    alert = Heartbeat.check_and_create_alert(device)
-
-    # If an alert was created, send it via WebSocket
-    if alert:
-        send_alert_to_websocket(device, alert.alert_message)
-
-def publish_device_status(device_id, status):
-    """Publish the device status to the MQTT broker."""
-    try:
-        # Ensure we're connected to the broker
-        if not mqtt_client.is_connected():
-            connect_to_mqtt()
-
-        # Define the topic for this device
-        topic = f"{MQTT_TOPIC}/?id={device_id}"
-        
-        # Publish the status message
-        payload = f"{status}"  # The status (ON or OFF)
-        mqtt_client.publish(topic, payload, qos=1)
-        
-        print(f"Published status: {status} for device: {device_id} on topic: {topic}")
-
-    except Exception as e:
-        print(f"Error publishing device status: {e}")
-
-def connect_to_mqtt(device_id, mqtt_broker):
-    """
-    Connects to the MQTT broker and starts subscribing to the device's heartbeat topic.
-    """
-    mqtt_client.on_connect = on_connect
-    mqtt_client.on_message = on_message
-
-    # Set up user data for the device
-    userdata = {'device_id': device_id}
-
-    # Connect to the MQTT broker
-    mqtt_client.user_data_set(userdata)
-    mqtt_client.connect(mqtt_broker)
-
-    # Start the MQTT client loop
-    mqtt_client.loop_start()
-
-# Example WebSocket alert notification
-def send_alert_to_websocket(device, alert_message):
-    channel_layer = get_channel_layer()
-    # Send alert message to WebSocket group corresponding to the device
-    channel_layer.group_send(
-        f"device_{device.id}",
-        {
-            "type": "device_alert",
-            "message": alert_message
-        }
-    )
-    # Here it would send an alert via WebSocket to the device
-    # For example, using Django Channels or other real-time technologies
-    # For demonstration, I simulate this as a function:
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.send)(
-        f"device_{device.id}", {
-            "type": "device.alert",
-            "message": alert_message
-        }
-    )
