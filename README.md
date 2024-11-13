@@ -1,59 +1,149 @@
-# Heart Rate Monitoring System
+# Heartbeat Rate Monitor with AWS IoT Integration
 
 ## Overview
 
-The Heart Rate Monitoring System is a Django web application that allows users to monitor heart rate data from various devices. The application provides an interface for managing devices, connecting to MQTT brokers, and visualizing heart rate data. This project also incorporates real-time updates through MQTT.
+This project provides a real-time heartbeat monitoring system using a web interface. It simulates and displays the heartbeat rate of a device and provides real-time alerts if the heartbeat rate is too high or too low. The system also connects to AWS IoT Core, enabling IoT communication between the device and AWS.
 
-## Features
+### Features:
+- Simulate heartbeat data for a device.
+- Show real-time heartbeat rate and alert messages.
+- Connect and disconnect from AWS IoT Core for device communication.
+- Toggle device status (ON/OFF).
+- Display recent heartbeats and alerts.
+- Receive and display real-time heartbeat data from a WebSocket.
 
-- Device Management: Add, update, and monitor devices.
-- MQTT Integration: Connect to MQTT brokers for real-time data streaming.
-- Heart Rate Monitoring: Visualize and manage heart rate data.
-- User Authentication: Secure access with user roles (superusers and regular users).
+## Prerequisites
 
-## Major Files and Functionalities
+Before setting up the project, ensure you have the following prerequisites:
 
-### 1. **`myapp/models.py`**
+- **Python** 3.x
+- **Django** framework
+- **PostgreSQL** for database storage
+- **AWS IoT Core** for device communication
+- **Node.js** and **npm** for front-end dependencies (if needed)
 
-This file defines the `Device` model, which represents a heart rate monitoring device. Each device has attributes such as `name`, `status`, and `machine_state`.
+## Project Setup
 
-### 2. **`myapp/views.py`**
+### Clone the Repository
 
-This file contains the view functions for handling requests:
+First, clone this repository to your local machine.
 
-- **`change_device_status(request)`**: Updates the status of a device based on user input.
-- **`connect_to_mqtt(request)`**: Connects to the specified MQTT broker and subscribes to relevant topics.
-- **`publish_message(request)`**: Publishes messages to a specified topic on the MQTT broker.
-- **`heartbeat_rate(request, device_id)`**: Renders the heart rate monitoring page for a specific device.
+```bash
+git clone https://github.com/yourusername/heartbeat-monitor.git
+cd heartbeat-monitor
+```
+Install Required Python Packages
+Install the required dependencies by running:
 
-### 3. **`myapp/templates/heartbeat_rate.html`**
+```bash
+pip install -r requirements.txt
+```
+### Configure Database
+Set up PostgreSQL for storing device data and alerts:
 
-This template displays the heart rate monitoring interface. It allows users to connect to an MQTT broker, view heart rate data, and change device statuses.
+Create a PostgreSQL Database:
 
-### 4. **`myapp/templates/device_list.html`**
+Create a database, e.g., heartbeat_monitor.
+Set up the necessary tables, like device, heartbeat, and alert.
+Configure Django Database Settings: Edit the DATABASES configuration in settings.py to match your PostgreSQL setup.
 
-This template lists all devices, showing their current statuses. Users can change the status of devices directly from this list.
+```python
+Copy code
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'heartbeat_monitor',  # Your database name
+        'USER': 'monitor',  # Your PostgreSQL username
+        'PASSWORD': 'monitoring',  # Your PostgreSQL password
+        'HOST': 'localhost',  # Your database host
+        'PORT': '5432',  # Default PostgreSQL port
+    }
+}
+```
+### AWS IoT Configuration
+Make sure you have AWS IoT Core set up and the following:
 
-### 5. **`myapp/urls.py`**
+Create a Thing in AWS IoT Core.
+Get the IoT endpoint to use for the connection.
+Configure policies and permissions for your device.
+You might want to create all required AWS resources found in the terraform file before(I also wrote an optional Lambda function to connect the IoT thing)
+to provision the various terraform resources
+```hcl
+terraform init
+terraform plan
+```
+```hcl
+terraform apply
+```
+ ### Set Up WebSocket (if using real-time heartbeat data)
+This project uses WebSocket for real-time communication. Make sure to install the necessary packages to handle WebSocket connections.
 
-This file defines the URL patterns for the application. It maps URLs to their corresponding view functions.
+```bash
+pip install channels
+```
+Add WebSocket routing in your urls.py:
 
-### 6. **`requirements.txt`**
+```python
+from django.urls import path
+from . import consumers
 
-Lists all the required Python packages for the project, including Django and Paho-MQTT.
+websocket_urlpatterns = [
+    path('ws/device/<device_id>/', consumers.DeviceConsumer.as_asgi()),
+]
+```
+### Run Migrations
+Apply the database migrations to create the necessary tables:
 
-## Installation
+```bash
+Copy code
+python manage.py migrate
+```
+### Run the Development Server
+Run the Django development server:
 
-### Prerequisites
+```bash
+Copy code
+python manage.py runserver
+```
+### Front-End Setup
+If your project includes front-end JavaScript dependencies (such as WebSocket or jQuery), ensure to install them as needed.
 
-- Python 3.10 or later
-- Django 5.1.2
-- Paho-MQTT
+```bash
+npm install
+```
 
-### Local Installation
+### Test the Application
+Once everything is set up:
 
-1. Clone the repository:
-
-   ```bash
-   git clone <repository-url>
-   cd heart_rate_monitor
+Go to http://127.0.0.1:8000/ in your browser.
+You should see the heartbeat monitor page.
+You can simulate heartbeat data, toggle the device status, and connect/disconnect from AWS IoT.
+Usage
+Toggle Device Status
+When the device status is ON, you can simulate heartbeat data.
+When the device status is OFF, you cannot simulate heartbeat data.
+Simulate Heartbeat
+Click Simulate Heartbeat to start generating heartbeat data every second.
+The Stop button will stop the simulation.
+AWS IoT Connection
+Enter the AWS IoT endpoint and click Connect to connect to AWS IoT.
+Once connected, the button will change to Disconnect, and you will be able to interact with the device on AWS.
+Troubleshooting
+If the Connect button doesn't work, ensure your AWS IoT endpoint is correct and accessible.
+If real-time heartbeat updates aren't showing, check WebSocket connection in your browser console.
+you can also enter the connect file in /CE directory and run the following for a sample Iot core sample/pubsub.py file you can use to see what your thing JSON body will look like
+```bash
+chmod +x start.sh
+```
+```bash
+./start.sh
+```
+### Build a Docker image with your docker file
+run the following commands:
+```bash
+docker build -t heartbeat_monitor:1.0.0 .
+```
+then on your chosen port run the app
+```bash
+docker run -p 8080:8080 heartbeat_monitor:1.0.0
+```
