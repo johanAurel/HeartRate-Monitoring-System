@@ -94,7 +94,7 @@ def listen_to_heartbeat(request):
     
     # Here, we will simulate receiving data from AWS IoT (e.g., using a subscription to a topic)
     response = iot_client.get_topic_attributes(
-        topicName=TOPIC
+        topicName='IotTopic'
     )
     
     data = json.loads(response['payload'])

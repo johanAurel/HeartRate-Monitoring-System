@@ -137,6 +137,17 @@ def add_device(request):
         form = DeviceForm()
     return render(request, 'add_device.html', {'form': form})
 
+@login_required  # Ensure the user is logged in before they can delete a device
+def delete_device(request, device_id):
+    # Get the device by ID, but ensure it belongs to the current user
+    device = get_object_or_404(Device, id=device_id, user=request.user)
+    
+    # Delete the device
+    device.delete()
+    
+    # Redirect the user to the device list or a confirmation page
+    return redirect('device_list')  # Adjust the redirect URL as needed
+
 def change_device_status(request):
 
     if request.method == "POST":

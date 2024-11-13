@@ -60,15 +60,12 @@ WSGI_APPLICATION = 'your_project_name.wsgi.application'  # Replace with your pro
 # Using SQLite for development, can be switched to Postgres or MySQL in production
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # For development
-        'NAME': BASE_DIR / 'db.sqlite3',  # SQLite file path
-        # Uncomment for PostgreSQL:
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'your_db_name',
-        # 'USER': 'your_db_user',
-        # 'PASSWORD': 'your_db_password',
-        # 'HOST': 'localhost',
-        # 'PORT': '5432',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'YOUR_db_NAME',
+        'USER': 'YOUR_USER',
+        'PASSWORD': 'YOUR_USER_PASSWORD',
+        'HOST': 'YOUR_RDS_ENDPOINT',
+        'PORT': '5432',
     }
 }
 
