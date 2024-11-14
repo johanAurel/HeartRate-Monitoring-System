@@ -73,22 +73,51 @@
       $("#aws-endpoint-form").submit(function (e) {
         e.preventDefault();
 
-        const endpoint = $("#aws-endpoint").val();
-        const awsAccessKey = $("#aws-access-key").val();
-        const awsSecretKey = $("#aws-secret-key").val();
-        const topic = $("#topic").val();
+        function fetchHeartbeatData() {
+      const deviceId = "{{ device.id }}";
 
-        $.ajax({
-          url: "{% url 'listen_to_heartbeat' %}",
-          type: "POST",
-          data: {
-            endpoint: endpoint,
-            aws_access_key: awsAccessKey,
-            aws_secret_key: awsSecretKey,
-            topic: topic,
-            csrfmiddlewaretoken: "{{ csrf_token }}"
-          },
-        });
+      $.ajax({
+        url: "{% url 'listen_to_heartbeat' %}",
+        type: "POST",
+        data: {
+          device_id: deviceId,
+          endpoint: $("#aws-endpoint").val(),
+          aws_access_key: $("#aws-access-key").val(),
+          aws_secret_key: $("#aws-secret-key").val(),
+          topic: $("#topic").val(),
+          csrfmiddlewaretoken: "{{ csrf_token }}"
+        },
+        success: function (response) {
+          if (response.error) {
+            console.error("Error:", response.error);
+          } else {
+            $("#heartbeat-data").text("Heartbeat Rate: " + response.rate + " BPM");
+            $("#last-heartbeat").text("Last Heartbeat: " + response.timestamp);
+
+            if (response.alert) {
+              $("#alert-message").text(response.alert).show();
+            } else {
+              $("#alert-message").hide();
+            }
+
+            // Append heartbeat and alert to the recent section
+            const heartbeatHTML = `<div>${response.timestamp}: ${response.rate} BPM</div>`;
+            $("#recent-heartbeats").prepend(heartbeatHTML);
+
+            if (response.alert) {
+              const alertHTML = `<div>${response.timestamp}: ${response.alert}</div>`;
+              $("#recent-alerts").prepend(alertHTML);
+            }
+          }
+        },
+        error: function (xhr, status, error) {
+          console.error("Error fetching heartbeat data:", error);
+        }
+      });
+    }
+
+    // Set an interval to fetch heartbeat data every 5 seconds
+    setInterval(fetchHeartbeatData, 1000);
       });
 
       $("#toggle-status").click(function (e) {
@@ -145,6 +174,7 @@
         $("#simulate-heartbeat").prop("disabled", false);
         $(this).hide();
       });
+
     });
   </script>
 </body>

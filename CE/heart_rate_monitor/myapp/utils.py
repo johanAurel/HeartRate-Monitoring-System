@@ -5,7 +5,7 @@ from django.utils import timezone
 import paho.mqtt.client as mqtt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Device, Alert ,Heartbeat
@@ -89,57 +89,49 @@ def simulate_heartbeat(request):
 
 # Configure the AWS IoT client
 @login_required
+@csrf_protect
 @require_POST
-@csrf_exempt
 def listen_to_heartbeat(request):
-    device_id = request.GET.get('device_id')
-    if not device_id:
-        return JsonResponse({'error': 'Device ID is required.'})
-
+    # Retrieve device and AWS parameters
+    device_id = request.POST.get('device_id')
     device = get_object_or_404(Device, id=device_id)
-    
+
     endpoint = request.POST.get('aws-endpoint')
     aws_access_key = request.POST.get('aws-access-key')
     aws_secret_key = request.POST.get('aws-secret-key')
     topic = request.POST.get('topic')
 
-    if not endpoint or not aws_access_key or not aws_secret_key:
+    # Check for required parameters
+    if not endpoint or not aws_access_key or not aws_secret_key or not topic:
         return JsonResponse({'error': 'AWS IoT endpoint and credentials are required.'})
 
     try:
-        # Initialize AWS IoT client dynamically with the provided credentials and endpoint
         iot_client = boto3.client(
-            'iot-data', 
+            'iot-data',
             endpoint_url=endpoint,
             aws_access_key_id=aws_access_key,
             aws_secret_access_key=aws_secret_key,
-            region_name='eu-west-2'  # Make sure to use the correct region
+            region_name='eu-west-2'
         )
-        
-        # Simulate receiving data from AWS IoT
-        response = iot_client.get_topic_attributes(
-            topicName=topic
-        )
-        
-        # Parse the data
+
+        # Example request to AWS IoT
+        response = iot_client.get_topic_attributes(topicName=topic)
         data = json.loads(response['payload'])
         timestamp = data.get('timestamp')
         rate = data.get('rate')
 
+        # Process and store data
         if timestamp and rate is not None:
-            # Create Heartbeat Model
-            heartbeat = Heartbeat(device=device, timestamp=timestamp, rate=rate)
-            heartbeat.save()
-
-            # Check for heartbeat alert
+            Heartbeat.objects.create(device=device, timestamp=timestamp, rate=rate)
+            alert_message = None
             if rate > 100:
-                alert = Alert(device=device, message=f"High Heartbeat Rate: {rate} BPM", timestamp=timestamp)
-                alert.save()
+                alert_message = f"High Heartbeat Rate: {rate} BPM"
+                Alert.objects.create(device=device, message=alert_message, timestamp=timestamp)
 
             return JsonResponse({
                 'timestamp': timestamp,
                 'rate': rate,
-                'alert': 'ALERT: High Heartbeat Rate' if rate > 100 else None
+                'alert': alert_message
             })
         else:
             return JsonResponse({'error': 'Invalid data received from IoT.'})
