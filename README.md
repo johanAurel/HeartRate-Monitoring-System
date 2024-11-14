@@ -147,3 +147,6 @@ then on your chosen port run the app
 ```bash
 docker run -p 8080:8080 heartbeat_monitor:1.0.0
 ```
+The backend ensures you can create a user to which you manually add device you either set as simulations or connect to your internet of thing and create the different Heartbeats and Alerts, ideally you would want to create an RDS with the terraform code and either use a lambda function(purely backend) or connect it via Endpoint.
+
+When alert is triggered the app does not only create ab Alert model but also is meant to ideally send the error message to Ios event to create an alarm model and send you the alert via the email of your user.
