@@ -62,6 +62,21 @@
   e.preventDefault();
 
           const endpoint = $("#iot-endpoint").val(); // Get the endpoint entered by the user
+          const awsAccessKey = ('#aws-access-key')
+          const awsSecretKey = ('#aws-secret-key')
+          const deviceId = "{{ device.id }}";
+          const topic = ('#topic')
+$.ajax({
+  url: "{% url 'listen_to_heartbeat' %}",
+  type: "GET",
+  data: {
+    device_id: deviceId,  // Pass device ID as query parameter
+    endpoint: endpoint,
+    aws_access_key: awsAccessKey,
+    aws_secret_key: awsSecretKey,
+    topic : topic,
+  },
+});
 
           connectToAWSIoT(endpoint); // Connect to AWS IoT if the endpoint is valid
         });

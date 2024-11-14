@@ -90,7 +90,7 @@ def simulate_heartbeat(request):
 @login_required
 @require_POST
 def listen_to_heartbeat(request):
-    device_id = request.GET.get('id')
+    device_id = request.GET.get('device_id')
     if not device_id:
         return JsonResponse({'error': 'Device ID is required.'})
 
