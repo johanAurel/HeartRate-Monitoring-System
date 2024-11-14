@@ -175,14 +175,15 @@ def heartbeat_rate(request):
         elif action == "connect_mqtt":
             # Connect to MQTT broker
             success = listen_to_heartbeat(request=request)
-            return JsonResponse({'message': 'Connected to MQTT Broker'}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
+            return JsonResponse({'rate': listen_to_heartbeat['rate'],
+                'timestamp': listen_to_heartbeat['timestamp']}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
 
         elif action == "simulate_heartbeat":
             # Simulate heartbeat rate
             heartbeat_data = simulate_heartbeat(device)
             return JsonResponse({
-                'heartbeat_rate': heartbeat_data['heartbeat_rate'],
-                'last_heartbeat': heartbeat_data['last_heartbeat']
+                'rate': heartbeat_data['rate'],
+                'timestamp': heartbeat_data['timestamp']
             })
 
     # Render the heartbeat rate template
