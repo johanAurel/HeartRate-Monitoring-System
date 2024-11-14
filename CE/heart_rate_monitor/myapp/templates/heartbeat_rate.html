@@ -61,32 +61,10 @@
           $("#aws-endpoint-form").submit(function (e) {
   e.preventDefault();
 
-  const endpoint = $("#aws-endpoint").val();
-  const deviceId = "{{ device.id }}";
-  const awsAccessKey = $("#aws-access-key").val();  // Add input for AWS Access Key
-  const awsSecretKey = $("#aws-secret-key").val();  // Add input for AWS Secret Key
-  
-  $.ajax({
-    url: "{% url 'listen_to_heartbeat' %}",
-    type: "GET",
-    data: {
-      id: deviceId,
-      endpoint: endpoint,  // Pass the endpoint from the input field
-      aws_access_key: awsAccessKey,  // Pass the AWS Access Key
-      aws_secret_key: awsSecretKey  // Pass the AWS Secret Key
-    },
-    success: function (response) {
-      if (response.error) {
-        alert("Error: " + response.error);
-      } else {
-        updateHeartbeatDisplay(response.rate, response.timestamp, response.alert);
-      }
-    },
-    error: function (xhr, status, error) {
-      console.error("Error receiving heartbeat:", error);
-    }
-  });
-});
+          const endpoint = $("#iot-endpoint").val(); // Get the endpoint entered by the user
+
+          connectToAWSIoT(endpoint); // Connect to AWS IoT if the endpoint is valid
+        });
 
         // Function to update heartbeat display
         function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
@@ -215,37 +193,39 @@
 
         // Function to display recent heartbeats
         function displayRecentHeartbeats(recentHeartbeats) {
-  const heartbeatHistoryDiv = $("#recent-heartbeats");
-  heartbeatHistoryDiv.empty(); // Clear previous entries
-  recentHeartbeats.forEach(function (hb) {
-    const hbElement = `
-      <div style="color: ${
-        hb.rate > 100
-          ? "red"
-          : hb.rate < 80
-          ? "green"
-          : "black"
-      };">
-        ${hb.rate} BPM at ${hb.timestamp}
-      </div>
-    `;
-    heartbeatHistoryDiv.append(hbElement);
-  });
-}
+          const heartbeatHistoryDiv = $("#recent-heartbeats");
+          heartbeatHistoryDiv.empty(); // Clear previous entries
+          recentHeartbeats.forEach(function (hb) {
+            const hbElement = `
+        <div style="color: ${
+          hb.heartbeat_rate > 100
+            ? "red"
+            : hb.heartbeat_rate < 80
+            ? "green"
+            : "black"
+        };">
+          ${hb.heartbeat_rate} BPM at ${hb.timestamp}
+        </div>
+      `;
 
-function displayRecentAlerts(recentAlerts) {
-  const alertHistoryDiv = $("#recent-alerts");
-  alertHistoryDiv.empty(); // Clear previous entries
-  recentAlerts.forEach(function (alert) {
-    const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
-    alertHistoryDiv.append(alertElement);
-  });
-}
+            heartbeatHistoryDiv.append(hbElement);
+          });
+        }
+
+        // Function to display recent alerts
+        function displayRecentAlerts(recentAlerts) {
+          const alertHistoryDiv = $("#recent-alerts");
+          alertHistoryDiv.empty(); // Clear previous entries
+          recentAlerts.forEach(function (alert) {
+            const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
+            alertHistoryDiv.append(alertElement);
+          });
+        }
 
 // WebSocket for alert notifications (if needed)
         function connectWebSocket(deviceId) {
           deviceSocket = new WebSocket(
-            `ws://${window.location.host}/ws/device/${deviceId}/`
+            ws://${window.location.host}/ws/device/${deviceId}/
           );
 
           deviceSocket.onmessage = function (e) {
