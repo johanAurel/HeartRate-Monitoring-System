@@ -1,14 +1,15 @@
 from django.contrib import messages
 from django.http import JsonResponse
-from django.contrib.auth import get_user_model
-from .forms import CustomAuthenticationForm, CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
-from .models import Device
+from django.contrib.auth import get_user_model, authenticate, login
+from .forms import  CustomUserCreationForm, DeviceForm # Ensure you import your custom forms
+from .models import Device, MyCustomUser
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.forms import AuthenticationForm
 from .utils import  *
 
 
@@ -20,28 +21,20 @@ def conditional_home(request):
 
 # LOGIN / REGISTER / LOGOUT
 def login_view(request):
-    if request.method == "POST":
-        form = CustomAuthenticationForm(request, data=request.POST)
-        
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(request, username=username, password=password)
-            
-            if user is not None:
-                login(request, user)
-                messages.success(request, "You have successfully logged in.")
-                return redirect('conditional_home')
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Invalid credentials. Please try again.")
+    # Get the user object (this should come from your authentication process)
+    username = request.POST['username']
+    password = request.POST['password']
     
+    # Authenticate the user
+    user = authenticate(request, username=username, password=password)
+    
+    if user is not None:
+        # Specify the backend explicitly if you're using multiple backends
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # or your custom backend
+        return redirect('home')  # or wherever you want to redirect
     else:
-        form = CustomAuthenticationForm()
-    
-    return render(request, 'login.html', {'form': form})
-
+        # Handle invalid login attempt
+        return render(request, 'login.html', {'error': 'Invalid credentials'})
 def register_view(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -117,9 +110,6 @@ def device_list(request):
         device.status = status
         device.save()
         
-        # Publish the status change to the MQTT broker
-        publish_device_status(device_id, status)
-        
         # Redirect back to the device list page
         return redirect('device_list')
     for device in devices:
@@ -184,8 +174,8 @@ def heartbeat_rate(request):
 
         elif action == "connect_mqtt":
             # Connect to MQTT broker
-            success = listen_to_heartbeat(req)
-            return JsonResponse({'message': 'Connected to MQTT Broker', 'broker': mqtt_broker}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
+            success = listen_to_heartbeat(request=request)
+            return JsonResponse({'message': 'Connected to MQTT Broker'}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
 
         elif action == "simulate_heartbeat":
             # Simulate heartbeat rate

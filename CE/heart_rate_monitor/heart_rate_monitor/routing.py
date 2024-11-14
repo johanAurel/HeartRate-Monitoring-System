@@ -1,6 +1,7 @@
-from django.urls import path
+# myapp/routing.py
+from django.urls import re_path
 from . import consumers
 
 websocket_urlpatterns = [
-    path('ws/account_changes/', consumers.AccountChangeConsumer.as_asgi()),
+    re_path(r'ws/somepath/$', consumers.MyConsumer.as_asgi()),  # Example WebSocket URL
 ]

@@ -1,18 +1,23 @@
 import os
 from pathlib import Path
+import secrets
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+def generate_django_secret_key():
+    chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
+    return ''.join(secrets.choice(chars) for _ in range(50))
+
+key = generate_django_secret_key()
+
+# Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-here')  # Change for production
+# Security
+SECRET_KEY = key
+DEBUG = True
+ALLOWED_HOSTS = ['localhost']  # Fixed typo: 'locahost' to 'localhost'
+AUTH_USER_MODEL = 'myapp.MyCustomUser'  # Ensure this is correctly defined
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
-
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
-
-# Application definition
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -20,12 +25,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'your_app_name',  # Replace with your app name
-    'django.contrib.sites',  # If using allauth for authentication
-    'rest_framework',  # If using Django REST framework
-    # Other installed apps...
+    'myapp',  # Your application
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -36,8 +39,35 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'your_project_name.urls'  # Replace with your project name
+# URLs and WSGI
+ROOT_URLCONF = 'heart_rate_monitor.urls'
+WSGI_APPLICATION = 'heart_rate_monitor.wsgi.application'
 
+# Database
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'heartbeat_monitor',  # Your database name
+        'USER': 'postgres',           # PostgreSQL username
+        'PASSWORD': 'postgres',       # PostgreSQL password
+        'HOST': 'localhost',          # Use 'localhost' or your actual database host
+        'PORT': '5432',               # Default PostgreSQL port
+    }
+}
+
+# Authentication
+AUTH_USER_MODEL = 'myapp.MyCustomUser'
+
+# Custom user model
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # default backend
+    'heart_rate_monitor.auth_backend.CustomUserBackend',  # your custom backend
+]
+
+# Primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -54,104 +84,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'your_project_name.wsgi.application'  # Replace with your project name
-
-# Database
-# Using SQLite for development, can be switched to Postgres or MySQL in production
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'YOUR_db_NAME',
-        'USER': 'YOUR_USER',
-        'PASSWORD': 'YOUR_USER_PASSWORD',
-        'HOST': 'YOUR_RDS_ENDPOINT',
-        'PORT': '5432',
-    }
-}
-
-# Password validation
-# https://docs.djangoproject.com/en/stable/ref/settings/#auth-password-validators
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-# Internationalization
-# https://docs.djangoproject.com/en/stable/topics/i18n/
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
-USE_L10N = True
-
-USE_TZ = True
-
-# Static files (CSS, JavaScript, images)
-# https://docs.djangoproject.com/en/stable/howto/static-files/
+# Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-
-# Media files (uploads)
 MEDIA_URL = '/media/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Security Settings
-CSRF_COOKIE_SECURE = True  # Enable for production
-SESSION_COOKIE_SECURE = True  # Enable for production
-
-# Default auto field
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Email settings (set up for production, e.g., using Gmail, SendGrid, etc.)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Example for Gmail
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')  # Your email
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')  # Your email password or app password
-
-# Authentication backends
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    # Add other authentication backends like social authentication if needed
-)
-
-# Login redirect URL after login
-LOGIN_REDIRECT_URL = '/'
-
-# Logging configuration (for development or production)
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-    },
-}
-
-# Custom settings (e.g., device id, API keys, etc.)
-DEVICE_API_KEY = os.environ.get('DEVICE_API_KEY', 'your-default-api-key')

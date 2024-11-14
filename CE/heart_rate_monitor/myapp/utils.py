@@ -11,18 +11,18 @@ from .models import Device, Alert ,Heartbeat
 
 iot_client = boto3.client(
     'iot-data',
-    region_name='us-east-1',  # Adjust as necessary
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name='eu-west-2',  # Adjust as necessary
+    aws_access_key_id='AKIA23WHULV6DA3OLPOG',
+    aws_secret_access_key="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",
 )
 
 cloudwatch_client = boto3.client(
     'cloudwatch',
     region_name='eu-west-2',
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    aws_access_key_id= "AKIA23WHULV6DA3OLPOG",# I disabled user  
+    aws_secret_access_key="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",
 )
-
+TOPIC='sdk/test/python'
 @login_required
 def toggle_device_status(request):
     if request.method == "POST":
@@ -94,7 +94,7 @@ def listen_to_heartbeat(request):
     
     # Here, we will simulate receiving data from AWS IoT (e.g., using a subscription to a topic)
     response = iot_client.get_topic_attributes(
-        topicName='IotTopic'
+        topicName=TOPIC
     )
     
     data = json.loads(response['payload'])
