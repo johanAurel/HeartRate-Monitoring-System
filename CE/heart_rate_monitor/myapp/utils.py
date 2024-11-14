@@ -20,8 +20,8 @@ iot_client = boto3.client(
 cloudwatch_client = boto3.client(
     'cloudwatch',
     region_name='eu-west-2',
-    aws_access_key_id= "AKIA23WHULV6DA3OLPOG",# I disabled user  
-    aws_secret_access_key="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",
+    aws_access_key_id= AWS_ACCESS_KEY_ID,# I disabled user  
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )
 TOPIC='sdk/test/python'
 @login_required
