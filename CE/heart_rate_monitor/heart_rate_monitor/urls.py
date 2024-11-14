@@ -13,7 +13,6 @@ urlpatterns = [
     path('devices/', device_list, name='device_list'),
     path('devices/add/', add_device, name='add_device'),
     path('device/<int:device_id>/delete/', delete_device, name='delete_device'),  
-    path('password_change/', password_management_disabled, name='password_change'),
     path('password_reset/', password_management_disabled, name='password_reset'),    
     path('devices/heartbeat/', heartbeat_rate, name='heartbeat'),
     path('logout', logout_view, name='logout'),
