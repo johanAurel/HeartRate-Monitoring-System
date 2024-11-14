@@ -174,16 +174,12 @@ def heartbeat_rate(request):
             device.save()
             return JsonResponse({'status': device.status})
 
-        elif action == "connect_mqtt":
+        elif action == "listen_to_heartbeat":
             # Connect to MQTT broker
             success = listen_to_heartbeat(request)
             return JsonResponse({'rate': listen_to_heartbeat['rate'],
                 'timestamp': listen_to_heartbeat['timestamp']}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
         elif action == "listen_heartbeat":
-            endpoint = request.POST.get('aws-endpoint')
-            aws_access_key = request.POST.get('aws-access-key')
-            aws_secret_key = request.POST.get('aws-secret-key')
-            topic = request.POST.get('topic')
             # Connect to AWS iot
             success = listen_to_heartbeat(device)
             return JsonResponse({'message': 'Connected to AWS Iot Server'}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
