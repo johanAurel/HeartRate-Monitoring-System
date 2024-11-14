@@ -6,4 +6,8 @@
 migrations/*
 *hidden.py
 /CE/heart_rate_monitor/myapp/hidden.py 
-
+/CE/heart_rate_monitor/heart_rate_monitor/hidden.py
+*terraform.tfvars
+*terraform.tfstate.*
+*terraform.tfstate
+*terraform_modules/*
