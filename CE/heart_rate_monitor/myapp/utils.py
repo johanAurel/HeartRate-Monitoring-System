@@ -8,12 +8,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Device, Alert ,Heartbeat
+from .hidden import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 
 iot_client = boto3.client(
     'iot-data',
     region_name='eu-west-2',  # Adjust as necessary
-    aws_access_key_id='AKIA23WHULV6DA3OLPOG',
-    aws_secret_access_key="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",
+    aws_access_key_id= AWS_ACCESS_KEY_ID,
+    aws_secret_access_key= AWS_SECRET_ACCESS_KEY,
 )
 
 cloudwatch_client = boto3.client(
