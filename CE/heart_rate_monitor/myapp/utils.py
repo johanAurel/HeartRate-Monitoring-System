@@ -5,6 +5,7 @@ from django.utils import timezone
 import paho.mqtt.client as mqtt
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Device, Alert ,Heartbeat
@@ -89,6 +90,7 @@ def simulate_heartbeat(request):
 # Configure the AWS IoT client
 @login_required
 @require_POST
+@csrf_exempt
 def listen_to_heartbeat(request):
     device_id = request.GET.get('device_id')
     if not device_id:
@@ -131,7 +133,7 @@ def listen_to_heartbeat(request):
 
             # Check for heartbeat alert
             if rate > 100:
-                alert = Alert(device=device, message=f"High Heartbeat Rate: {rate} BPM")
+                alert = Alert(device=device, message=f"High Heartbeat Rate: {rate} BPM", timestamp=timestamp)
                 alert.save()
 
             return JsonResponse({

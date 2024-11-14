@@ -1,4 +1,4 @@
-import os
+import logging
 from pathlib import Path
 import secrets
 
@@ -10,6 +10,12 @@ key = generate_django_secret_key()
 
 # Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Static files
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
 
 # Security
 SECRET_KEY = key
@@ -84,9 +90,35 @@ TEMPLATES = [
     },
 ]
 
-# Static files
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_ROOT = BASE_DIR / 'media'
+#logging
+LOGIN_URL = '/login'
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django.security.csrf': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+
 

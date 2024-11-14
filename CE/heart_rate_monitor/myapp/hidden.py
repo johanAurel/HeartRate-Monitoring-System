@@ -1,2 +1,3 @@
 AWS_ACCESS_KEY_ID ="AKIA23WHULV6DA3OLPOG"
 AWS_SECRET_ACCESS_KEY ="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"
+endpoint = "d08281963m7bz3u3le4=733-ats.iot.eu-west-2.amazonaws.com"
