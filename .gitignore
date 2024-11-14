@@ -1,0 +1,7 @@
+/CE/heart_rate_monitor/staticfiles
+*staticfiles
+*__pycache__
+/CE/heart_rate_monitor/__pycache__
+*__pycache_/_*
+migrations/*
+
