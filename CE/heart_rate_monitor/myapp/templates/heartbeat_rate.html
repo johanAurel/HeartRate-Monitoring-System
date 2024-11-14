@@ -185,24 +185,35 @@
         // Function to update the current heartbeat rate on screen
 
         function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-          $("#heartbeat-data").text(
-            "Heartbeat Rate: " + heartbeatRate + " BPM"
-          );
-          $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
-          if (heartbeatRate > 100) {
-            $("#heartbeat-data").css("color", "red");
-            $("#alert-message")
-              .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
-              .show();
-            setTimeout(function () {
-              $("#alert-message").fadeOut();
-            }, 3000); // Hide alert after 3 seconds
-          } else if (heartbeatRate < 80) {
-            $("#heartbeat-data").css("color", "green");
-          } else {
-            $("#heartbeat-data").css("color", "blue");
-          }
-        }
+  // Update the heartbeat rate and last heartbeat displayed on the page
+  $("#heartbeat-data").text("Heartbeat Rate: " + heartbeatRate + " BPM");
+  $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
+
+  // Display alert if heartbeat rate is too high
+  if (heartbeatRate > 100) {
+    $("#heartbeat-data").css("color", "red");
+    $("#alert-message")
+      .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
+      .show();
+    setTimeout(function () {
+      $("#alert-message").fadeOut();
+    }, 3000); // Hide alert after 3 seconds
+  } else if (heartbeatRate < 80) {
+    $("#heartbeat-data").css("color", "green");
+  } else {
+    $("#heartbeat-data").css("color", "blue");
+  }
+
+  if (alert) {
+    $("#alert-message").text(alert).show();
+    setTimeout(function () {
+      $("#alert-message").fadeOut();
+    }, 3000); // Hide alert after 3 seconds
+  } else {
+    $("#alert-message").hide();
+  }
+}
+
 
         // Function to display recent heartbeats in the monitor_device page
         function displayRecentHeartbeats(recentHeartbeats) {
