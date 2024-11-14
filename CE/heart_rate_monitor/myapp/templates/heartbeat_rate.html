@@ -130,12 +130,11 @@
 
         // Variable to store the interval ID
 
-        // Simulate heartbeat data
-
-        $("#simulate-heartbeat").click(function (e) {
+         // Simulate heartbeat data
+         $("#simulate-heartbeat").click(function (e) {
           e.preventDefault();
 
-          const deviceId = "{{ device.id }}";
+          const deviceId = "{{ device.id }}"; // Use the device ID from the context
 
           // Disable the simulate button and show the stop button
           $(this).prop("disabled", true);
@@ -158,7 +157,7 @@
                   response.alert
                 );
 
-                // Display recent heartbeats and alerts (in monitor_device.html, not here)
+                // Display recent heartbeats and alerts
                 displayRecentHeartbeats(response.recent_heartbeats);
                 displayRecentAlerts(response.recent_alerts);
               },
@@ -170,7 +169,6 @@
         });
 
         // Stop generating heartbeat data
-
         $("#stop-heartbeat").click(function (e) {
           e.preventDefault();
 
@@ -183,39 +181,37 @@
         });
 
         // Function to update the current heartbeat rate on screen
-
         function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-  // Update the heartbeat rate and last heartbeat displayed on the page
-  $("#heartbeat-data").text("Heartbeat Rate: " + heartbeatRate + " BPM");
-  $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
+          // Update the heartbeat rate and last heartbeat displayed on the page
+          $("#heartbeat-data").text("Heartbeat Rate: " + heartbeatRate + " BPM");
+          $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
 
-  // Display alert if heartbeat rate is too high
-  if (heartbeatRate > 100) {
-    $("#heartbeat-data").css("color", "red");
-    $("#alert-message")
-      .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
-      .show();
-    setTimeout(function () {
-      $("#alert-message").fadeOut();
-    }, 3000); // Hide alert after 3 seconds
-  } else if (heartbeatRate < 80) {
-    $("#heartbeat-data").css("color", "green");
-  } else {
-    $("#heartbeat-data").css("color", "blue");
-  }
+          // Display alert if heartbeat rate is too high
+          if (heartbeatRate > 100) {
+            $("#heartbeat-data").css("color", "red");
+            $("#alert-message")
+              .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
+              .show();
+            setTimeout(function () {
+              $("#alert-message").fadeOut();
+            }, 3000); // Hide alert after 3 seconds
+          } else if (heartbeatRate < 80) {
+            $("#heartbeat-data").css("color", "green");
+          } else {
+            $("#heartbeat-data").css("color", "blue");
+          }
 
-  if (alert) {
-    $("#alert-message").text(alert).show();
-    setTimeout(function () {
-      $("#alert-message").fadeOut();
-    }, 3000); // Hide alert after 3 seconds
-  } else {
-    $("#alert-message").hide();
-  }
-}
+          if (alert) {
+            $("#alert-message").text(alert).show();
+            setTimeout(function () {
+              $("#alert-message").fadeOut();
+            }, 3000); // Hide alert after 3 seconds
+          } else {
+            $("#alert-message").hide();
+          }
+        }
 
-
-        // Function to display recent heartbeats in the monitor_device page
+        // Function to display recent heartbeats
         function displayRecentHeartbeats(recentHeartbeats) {
           const heartbeatHistoryDiv = $("#recent-heartbeats");
           heartbeatHistoryDiv.empty(); // Clear previous entries
@@ -246,6 +242,7 @@
           });
         }
 
+        // WebSocket for alert notifications (if needed)
         function connectWebSocket(deviceId) {
           deviceSocket = new WebSocket(
             `ws://${window.location.host}/ws/device/${deviceId}/`
@@ -309,30 +306,35 @@
     </button>
 
     <hr />
-    <div id="heartbeat-section" {% if device.status == 'OFF' %}style="display:
-    none;"{% elif device.status == 'ON' %} style ="display: block;"{% endif %}>
-    <h2>Simulate Heartbeat</h2>
-    <button
-      id="simulate-heartbeat"
-      style="background-color: rgb(34, 159, 231); color: white;"
-    >
-      Simulate Heartbeat
-    </button>
-    <button
-      id="stop-heartbeat"
-      style="display: none; background-color: rgb(34, 159, 231); color: white;"
-    >
-      Stop
-    </button>
-    <div id="recent-heartbeats" style="margin-top: 20px;">
-      <h3>Recent Heartbeats</h3>
-      <!-- List of heartbeats -->
-    </div>
+    <div id="heartbeat-section" {% if device.status == 'OFF' %}style="display: none;"{% else %} style ="display: block;"{% endif %}>
+      <h2>Simulate Heartbeat</h2>
+      <button
+        id="simulate-heartbeat"
+        style="background-color: rgb(34, 159, 231); color: white;"
+      >
+        Simulate Heartbeat
+      </button>
+      <button
+        id="stop-heartbeat"
+        style="display: none; background-color: rgb(34, 159, 231); color: white;"
+      >
+        Stop
+      </button>
 
-    <div id="recent-alerts" style="margin-top: 20px;">
-      <h3>Recent Alerts</h3>
-      <!-- List of alerts -->
-    </div>
+      <!-- Display Heartbeat data -->
+      <div id="heartbeat-data" style="font-size: 18px; margin-top: 10px;">Heartbeat Rate: Not Available</div>
+      <div id="last-heartbeat" style="font-size: 18px; margin-top: 10px;">Last Heartbeat: Not Available</div>
+      <div id="alert-message" style="display: none; color: red; font-weight: bold;"></div>
+
+      <div id="recent-heartbeats" style="margin-top: 20px;">
+        <h3>Recent Heartbeats</h3>
+        <!-- List of heartbeats -->
+      </div>
+
+      <div id="recent-alerts" style="margin-top: 20px;">
+        <h3>Recent Alerts</h3>
+        <!-- List of alerts -->
+      </div>
 
     <hr />
 
