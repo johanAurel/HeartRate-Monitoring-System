@@ -49,37 +49,44 @@
           mqttClient.on("message", function (topic, payload) {
             const data = JSON.parse(payload.toString());
 
-            const last_heartbeat = data.last_heartbeat;
-            const heartbeat_rate = data.heartbeat_rate;
+            const timestamp = data.timestamp;
+            const rate = data.rate;
             const alert =
-              heartbeat_rate > 100 ? "ALERT: High Heartbeat Rate!" : null;
+              rate > 100 ? "ALERT: High Heartbeat Rate!" : null;
 
             // Display the values
-            updateHeartbeatDisplay(heartbeat_rate, last_heartbeat, alert);
+            updateHeartbeatDisplay(rate, timestamp, alert);
           });
 
-          mqttClient.on("connect", function () {
-            console.log("Connected to AWS IoT");
+          $("#aws-endpoint-form").submit(function (e) {
+  e.preventDefault();
 
-            // Subscribe to the heartbeat topic
-            mqttClient.subscribe(topic, { qos: 1 });
-          });
-
-          mqttClient.connect({
-            clientId: clientId,
-            cleanSession: true,
-            useSSL: true,
-          });
-        }
-
-        // Event listener to handle the "Connect to AWS IoT" button click
-        $("#connect-button").click(function (e) {
-          e.preventDefault();
-
-          const endpoint = $("#iot-endpoint").val(); // Get the endpoint entered by the user
-
-          connectToAWSIoT(endpoint); // Connect to AWS IoT if the endpoint is valid
-        });
+  const endpoint = $("#aws-endpoint").val();
+  const deviceId = "{{ device.id }}";
+  const awsAccessKey = $("#aws-access-key").val();  // Add input for AWS Access Key
+  const awsSecretKey = $("#aws-secret-key").val();  // Add input for AWS Secret Key
+  
+  $.ajax({
+    url: "{% url 'listen_to_heartbeat' %}",
+    type: "GET",
+    data: {
+      id: deviceId,
+      endpoint: endpoint,  // Pass the endpoint from the input field
+      aws_access_key: awsAccessKey,  // Pass the AWS Access Key
+      aws_secret_key: awsSecretKey  // Pass the AWS Secret Key
+    },
+    success: function (response) {
+      if (response.error) {
+        alert("Error: " + response.error);
+      } else {
+        updateHeartbeatDisplay(response.rate, response.timestamp, response.alert);
+      }
+    },
+    error: function (xhr, status, error) {
+      console.error("Error receiving heartbeat:", error);
+    }
+  });
+});
 
         // Function to update heartbeat display
         function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
@@ -132,42 +139,37 @@
 
          // Simulate heartbeat data
          $("#simulate-heartbeat").click(function (e) {
-          e.preventDefault();
+  e.preventDefault();
 
-          const deviceId = "{{ device.id }}"; // Use the device ID from the context
+  const deviceId = "{{ device.id }}";
 
-          // Disable the simulate button and show the stop button
-          $(this).prop("disabled", true);
-          $("#stop-heartbeat").show();
+  // Disable the simulate button and show the stop button
+  $(this).prop("disabled", true);
+  $("#stop-heartbeat").show();
 
-          // Start generating heartbeat every second
-          heartbeatInterval = setInterval(function () {
-            $.ajax({
-              url: "{% url 'simulate_heartbeat' %}",
-              type: "POST",
-              data: {
-                device_id: deviceId,
-                csrfmiddlewaretoken: "{{ csrf_token }}",
-              },
-              success: function (response) {
-                // Update heartbeat display
-                updateHeartbeatDisplay(
-                  response.heartbeat_rate,
-                  response.last_heartbeat,
-                  response.alert
-                );
+  // Start generating heartbeat every second
+  heartbeatInterval = setInterval(function () {
+    $.ajax({
+      url: "{% url 'simulate_heartbeat' %}",
+      type: "POST",
+      data: {
+        device_id: deviceId,
+        csrfmiddlewaretoken: "{{ csrf_token }}",
+      },
+      success: function (response) {
+        // Update heartbeat display
+        updateHeartbeatDisplay(response.rate, response.timestamp, response.alert);
 
-                // Display recent heartbeats and alerts
-                displayRecentHeartbeats(response.recent_heartbeats);
-                displayRecentAlerts(response.recent_alerts);
-              },
-              error: function (xhr, status, error) {
-                console.error("Error simulating heartbeat:", error);
-              },
-            });
-          }, 1000); // Call every 1000 milliseconds (1 second)
-        });
-
+        // Display recent heartbeats and alerts (updated values from the response)
+        displayRecentHeartbeats(response.recent_heartbeats);
+        displayRecentAlerts(response.recent_alerts);
+      },
+      error: function (xhr, status, error) {
+        console.error("Error simulating heartbeat:", error);
+      },
+    });
+  }, 1000); // Call every 1000 milliseconds (1 second)
+});
         // Stop generating heartbeat data
         $("#stop-heartbeat").click(function (e) {
           e.preventDefault();
@@ -182,67 +184,65 @@
 
         // Function to update the current heartbeat rate on screen
         function updateHeartbeatDisplay(heartbeatRate, lastHeartbeat, alert) {
-          // Update the heartbeat rate and last heartbeat displayed on the page
-          $("#heartbeat-data").text("Heartbeat Rate: " + heartbeatRate + " BPM");
-          $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
+  // Update the heartbeat rate and last heartbeat displayed on the page
+  $("#heartbeat-data").text("Heartbeat Rate: " + heartbeatRate + " BPM");
+  $("#last-heartbeat").text("Last Heartbeat: " + lastHeartbeat);
 
-          // Display alert if heartbeat rate is too high
-          if (heartbeatRate > 100) {
-            $("#heartbeat-data").css("color", "red");
-            $("#alert-message")
-              .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
-              .show();
-            setTimeout(function () {
-              $("#alert-message").fadeOut();
-            }, 3000); // Hide alert after 3 seconds
-          } else if (heartbeatRate < 80) {
-            $("#heartbeat-data").css("color", "green");
-          } else {
-            $("#heartbeat-data").css("color", "blue");
-          }
+  // Display alert if heartbeat rate is too high
+  if (heartbeatRate > 100) {
+    $("#heartbeat-data").css("color", "red");
+    $("#alert-message")
+      .text("ALERT: High Heartbeat Rate - " + heartbeatRate + " BPM!")
+      .show();
+    setTimeout(function () {
+      $("#alert-message").fadeOut();
+    }, 3000); // Hide alert after 3 seconds
+  } else if (heartbeatRate < 80) {
+    $("#heartbeat-data").css("color", "green");
+  } else {
+    $("#heartbeat-data").css("color", "blue");
+  }
 
-          if (alert) {
-            $("#alert-message").text(alert).show();
-            setTimeout(function () {
-              $("#alert-message").fadeOut();
-            }, 3000); // Hide alert after 3 seconds
-          } else {
-            $("#alert-message").hide();
-          }
-        }
+  if (alert) {
+    $("#alert-message").text(alert).show();
+    setTimeout(function () {
+      $("#alert-message").fadeOut();
+    }, 3000); // Hide alert after 3 seconds
+  } else {
+    $("#alert-message").hide();
+  }
+}
 
         // Function to display recent heartbeats
         function displayRecentHeartbeats(recentHeartbeats) {
-          const heartbeatHistoryDiv = $("#recent-heartbeats");
-          heartbeatHistoryDiv.empty(); // Clear previous entries
-          recentHeartbeats.forEach(function (hb) {
-            const hbElement = `
-        <div style="color: ${
-          hb.heartbeat_rate > 100
-            ? "red"
-            : hb.heartbeat_rate < 80
-            ? "green"
-            : "black"
-        };">
-          ${hb.heartbeat_rate} BPM at ${hb.timestamp}
-        </div>
-      `;
+  const heartbeatHistoryDiv = $("#recent-heartbeats");
+  heartbeatHistoryDiv.empty(); // Clear previous entries
+  recentHeartbeats.forEach(function (hb) {
+    const hbElement = `
+      <div style="color: ${
+        hb.rate > 100
+          ? "red"
+          : hb.rate < 80
+          ? "green"
+          : "black"
+      };">
+        ${hb.rate} BPM at ${hb.timestamp}
+      </div>
+    `;
+    heartbeatHistoryDiv.append(hbElement);
+  });
+}
 
-            heartbeatHistoryDiv.append(hbElement);
-          });
-        }
+function displayRecentAlerts(recentAlerts) {
+  const alertHistoryDiv = $("#recent-alerts");
+  alertHistoryDiv.empty(); // Clear previous entries
+  recentAlerts.forEach(function (alert) {
+    const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
+    alertHistoryDiv.append(alertElement);
+  });
+}
 
-        // Function to display recent alerts
-        function displayRecentAlerts(recentAlerts) {
-          const alertHistoryDiv = $("#recent-alerts");
-          alertHistoryDiv.empty(); // Clear previous entries
-          recentAlerts.forEach(function (alert) {
-            const alertElement = `<div style="color: red;">${alert.message} at ${alert.timestamp}</div>`;
-            alertHistoryDiv.append(alertElement);
-          });
-        }
-
-        // WebSocket for alert notifications (if needed)
+// WebSocket for alert notifications (if needed)
         function connectWebSocket(deviceId) {
           deviceSocket = new WebSocket(
             `ws://${window.location.host}/ws/device/${deviceId}/`
@@ -268,8 +268,9 @@
         // Initialize WebSocket connection when the page loads
         const deviceId = "{{ device.id }}";
         connectWebSocket(deviceId);
-      });
-    </script>
+      }});
+    
+      </script>
   </head>
   <body>
     <div style="text-align: center;">
@@ -339,10 +340,20 @@
     <hr />
 
     <h2>Connect to AWS IoT Endpoint</h2>
-<label for="iot-endpoint">Enter AWS IoT Endpoint:</label>
-<input type="text" id="iot-endpoint" required />
-<button id="connect-button" style="background-color: rgb(34, 159, 231); color: white;">
-  Connect to AWS IoT
-</button>
+    <form id="aws-endpoint-form">
+  <label for="aws-endpoint">AWS IoT Endpoint:</label>
+  <input type="text" id="aws-endpoint" name="aws-endpoint" placeholder="Enter AWS IoT Endpoint" required>
+  
+  <label for="aws-access-key">AWS Access Key:</label>
+  <input type="text" id="aws-access-key" name="aws-access-key" placeholder="Enter AWS Access Key" required>
+  
+  <label for="aws-secret-key">AWS Secret Key:</label>
+  <input type="text" id="aws-secret-key" name="aws-secret-key" placeholder="Enter AWS Secret Key" required>
+  
+  <label for="topic">Topic</label>
+  <input type="text" id="topic" name="topic" placeholder="Enter topic" required>
+  <button type="submit" id="listen-heartbeat">Start Listening</button>
+</form>
+
   </body>
 </html>
