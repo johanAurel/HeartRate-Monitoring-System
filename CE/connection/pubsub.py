@@ -140,8 +140,8 @@ if __name__ == '__main__':
             heartbeat_rate = random.randint(60, 115)
             last_heartbeat = (datetime.now()).isoformat()
             message_json = json.dumps({
-             "heartbeat_rate": heartbeat_rate,
-             "last_heartbeat": last_heartbeat
+             "rate": heartbeat_rate,
+             "timestamp": last_heartbeat
             },indent=2)
             mqtt_connection.publish(
                 topic=message_topic,

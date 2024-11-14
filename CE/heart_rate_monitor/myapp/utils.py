@@ -91,77 +91,48 @@ def simulate_heartbeat(request):
 @require_POST
 def listen_to_heartbeat(request):
     device_id = request.GET.get('id')
-    device = get_object_or_404(Device, id=device_id)
-    endpoint = request.GET.get('endpoint')  
-    aws_access_key = AWS_ACCESS_KEY_ID
-    aws_secret_key = request.GET.get('aws_secret_key')  
-    topic = request.GET.get('topic') 
+    if not device_id:
+        return JsonResponse({'error': 'Device ID is required.'})
 
-    if not endpoint or not aws_access_key or not aws_secret_key or not topic:
+    device = get_object_or_404(Device, id=device_id)
+    
+    endpoint = request.POST.get('aws-endpoint')
+    aws_access_key = request.POST.get('aws-access-key')
+    aws_secret_key = request.POST.get('aws-secret-key')
+    topic = request.POST.get('topic')
+
+    if not endpoint or not aws_access_key or not aws_secret_key:
         return JsonResponse({'error': 'AWS IoT endpoint and credentials are required.'})
 
     try:
-      
+        # Initialize AWS IoT client dynamically with the provided credentials and endpoint
         iot_client = boto3.client(
             'iot-data', 
             endpoint_url=endpoint,
             aws_access_key_id=aws_access_key,
             aws_secret_access_key=aws_secret_key,
-            region_name='eu-west-2'  
+            region_name='eu-west-2'  # Make sure to use the correct region
         )
         
-        cloudwatch_client = boto3.client(
-            'cloudwatch', 
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_key,
-            region_name='eu-west-2'  
-        )
-
-        # Simulate receiving data from AWS IoT (for now, we'll use get_topic_attributes)
+        # Simulate receiving data from AWS IoT
         response = iot_client.get_topic_attributes(
-            topicName=TOPIC
+            topicName=topic
         )
         
-        # Parse the data from the response (assuming JSON payload)
+        # Parse the data
         data = json.loads(response['payload'])
         timestamp = data.get('timestamp')
         rate = data.get('rate')
-        
+
         if timestamp and rate is not None:
             # Create Heartbeat Model
             heartbeat = Heartbeat(device=device, timestamp=timestamp, rate=rate)
             heartbeat.save()
-            
-            # Check for heartbeat alert (if rate > 100 BPM)
+
+            # Check for heartbeat alert
             if rate > 100:
-                # Create Alert Model
                 alert = Alert(device=device, message=f"High Heartbeat Rate: {rate} BPM")
                 alert.save()
-
-                # Send an alert to AWS CloudWatch
-                cloudwatch_client.put_metric_data(
-                    Namespace='HeartbeatMetrics',
-                    MetricData=[
-                        {
-                            'MetricName': 'HighHeartbeatAlert',
-                            'Dimensions': [
-                                {
-                                    'Name': 'DeviceId',
-                                    'Value': device.device_id
-                                },
-                            ],
-                            'Value': 1,
-                            'Unit': 'Count'
-                        },
-                    ]
-                )
-
-                # Optionally, send an alert to AWS IoT (e.g., publish to a topic)
-                iot_client.publish(
-                    topic=TOPIC,
-                    qos=1,
-                    payload=json.dumps({'message': f"High Heartbeat Alert for {device.device_name}"})
-                )
 
             return JsonResponse({
                 'timestamp': timestamp,
@@ -170,6 +141,6 @@ def listen_to_heartbeat(request):
             })
         else:
             return JsonResponse({'error': 'Invalid data received from IoT.'})
-    
+
     except Exception as e:
         return JsonResponse({'error': str(e)})
