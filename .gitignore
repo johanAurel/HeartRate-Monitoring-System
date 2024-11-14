@@ -4,4 +4,6 @@
 /CE/heart_rate_monitor/__pycache__
 *__pycache_/_*
 migrations/*
+*hidden.py
+/CE/heart_rate_monitor/myapp/hidden.py 
 

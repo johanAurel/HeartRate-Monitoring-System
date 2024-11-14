@@ -21,20 +21,22 @@ def conditional_home(request):
 
 # LOGIN / REGISTER / LOGOUT
 def login_view(request):
-    # Get the user object (this should come from your authentication process)
-    username = request.POST['username']
-    password = request.POST['password']
-    
-    # Authenticate the user
-    user = authenticate(request, username=username, password=password)
-    
-    if user is not None:
-        # Specify the backend explicitly if you're using multiple backends
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # or your custom backend
-        return redirect('home')  # or wherever you want to redirect
-    else:
-        # Handle invalid login attempt
-        return render(request, 'login.html', {'error': 'Invalid credentials'})
+    if request.method == 'POST':
+        # Extract username and password from POST data
+        username = request.POST.get('username')  # Use get() to prevent errors if not found
+        password = request.POST.get('password')
+
+        if username and password:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')  # Redirect to a different page after successful login
+            else:
+                return render(request, 'login.html', {'error': 'Invalid username or password'})
+
+        return render(request, 'login.html', {'error': 'Both username and password are required'})
+
+    return render(request, 'login.html')    
 def register_view(request):
     if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
@@ -177,6 +179,14 @@ def heartbeat_rate(request):
             success = listen_to_heartbeat(request=request)
             return JsonResponse({'rate': listen_to_heartbeat['rate'],
                 'timestamp': listen_to_heartbeat['timestamp']}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
+        elif action == "listen_heartbeat":
+            endpoint = request.POST.get('aws-endpoint')
+            aws_access_key = request.POST.get('aws-access-key')
+            aws_secret_key = request.POST.get('aws-secret-key')
+            topic = request.POST.get('topic')
+            # Connect to AWS iot
+            success = listen_to_heartbeat(device)
+            return JsonResponse({'message': 'Connected to AWS Iot Server'}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
 
         elif action == "simulate_heartbeat":
             # Simulate heartbeat rate
