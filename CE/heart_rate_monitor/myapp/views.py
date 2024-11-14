@@ -176,7 +176,7 @@ def heartbeat_rate(request):
 
         elif action == "connect_mqtt":
             # Connect to MQTT broker
-            success = listen_to_heartbeat(request=request)
+            success = listen_to_heartbeat(request)
             return JsonResponse({'rate': listen_to_heartbeat['rate'],
                 'timestamp': listen_to_heartbeat['timestamp']}) if success else JsonResponse({'error': 'Failed to connect'}, status=400)
         elif action == "listen_heartbeat":
