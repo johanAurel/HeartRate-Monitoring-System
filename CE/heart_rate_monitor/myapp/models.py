@@ -36,8 +36,9 @@ class Heartbeat(models.Model):
 
 class Alert(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='alerts')
-    message = models.TextField()
+    alert_message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    
 
     def __str__(self):
         return f"Alert for {self.device.name} at {self.timestamp}"
