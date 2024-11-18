@@ -183,10 +183,11 @@ def listen_to_heartbeat(request):
         response = iot_client.get_thing_shadow(thingName=device_id)
         payload = json.loads(response['payload'].read().decode('utf-8'))
 
-        # Extract necessary data
-        state = payload.get('state', {}).get('reported', {})
-        timestamp = state.get('timestamp')
-        rate = state.get('rate')
+        desired_state = payload["state"].get("desired", {})
+
+        # Extract desired values
+        rate = desired_state.get("rate")
+        timestamp = desired_state.get("timestamp")
 
         if timestamp and rate is not None:
             # Save the heartbeat
