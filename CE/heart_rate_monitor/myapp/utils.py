@@ -143,7 +143,7 @@ def trigger_cloudwatch_alarm(device_id, rate, access_key , secret_key):
             "message": f" {rate}BPM is awy too high!!!!",
         }
 
-# Configure the AWS IoT client
+# Configure the AW  S IoT client
 @login_required
 @csrf_protect
 @require_POST
